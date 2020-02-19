@@ -33,8 +33,8 @@ StateMachine nfa_from_kleene(StateMachine &a, int &last_index)
 StateMachine nfa_from_transition(int transition, int &last_index)
 {
     State *last_state = new State(to_string(last_index + 2));
-    State *first_state =
-        new State(to_string(last_index + 1), vector<pair<int, State *>>{make_pair(transition, last_state)});
+    string first_name_string = to_string(last_index + 1);
+    State *first_state = new State(first_name_string, vector<pair<int, State *>>{make_pair(transition, last_state)});
     last_index += 2;
     return StateMachine(first_state, last_state);
 }

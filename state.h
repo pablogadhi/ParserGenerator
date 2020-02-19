@@ -7,7 +7,7 @@ class State
 {
   private:
     vector<pair<int, State *>> t_functions;
-    string name;
+    string state_name;
 
   public:
     State(string, vector<pair<int, State *>>);
@@ -16,4 +16,5 @@ class State
     vector<pair<int, State *>> get_t_functions();
     void add_t_function(pair<int, State *>);
     ~State();
+    string name();
 };

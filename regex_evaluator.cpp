@@ -118,7 +118,7 @@ StateMachine postfix_eval(string postfix_expr)
             {
                 b = m_stack.top();
                 m_stack.pop();
-                m_stack.push(nfa_operations(c, state_index, vector<StateMachine>{a, b}));
+                m_stack.push(nfa_operations(c, state_index, vector<StateMachine>{b, a}));
             }
             else
             {
@@ -160,6 +160,7 @@ int main(int argc, char const *argv[])
     string postfix_expr = infix_to_postfix(user_input);
     cout << "Postfix: " << postfix_expr << endl;
     StateMachine machine = postfix_eval(postfix_expr);
+    machine.print_machine();
     // cout << "Resultado: " << postfix_eval(postfix_expr, OPERATORS) << endl;
     return 0;
 }

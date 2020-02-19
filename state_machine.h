@@ -12,4 +12,6 @@ class StateMachine
     ~StateMachine();
     State *start();
     State *end();
+    void print_machine();
+    void print_t_functions(State, vector<string> &);
 };
