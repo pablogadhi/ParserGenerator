@@ -30,6 +30,28 @@ string State::name()
     return state_name;
 }
 
-State::~State()
+vector<State *> State::get_next_e_states()
 {
+    vector<State *> e_states = vector<State *>();
+    for (auto &trans : get_t_functions())
+    {
+        if (trans.first == -1)
+        {
+            e_states.push_back(trans.second);
+        }
+    }
+    return e_states;
+}
+
+vector<State *> State::move(int symbol)
+{
+    vector<State *> movements;
+    for (auto &trans : t_functions)
+    {
+        if (trans.first == symbol)
+        {
+            movements.push_back(trans.second);
+        }
+    }
+    return movements;
 }

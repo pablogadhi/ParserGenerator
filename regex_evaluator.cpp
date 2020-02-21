@@ -1,3 +1,4 @@
+#include "dfa_builder.h"
 #include "nfa_builder.h"
 #include <algorithm>
 #include <iostream>
@@ -161,6 +162,10 @@ int main(int argc, char const *argv[])
     cout << "Postfix: " << postfix_expr << endl;
     StateMachine machine = postfix_eval(postfix_expr);
     machine.print_machine();
+    dfa_from_nfa(machine);
+
+    cout << endl;
+    // dfa.print_machine();
     // cout << "Resultado: " << postfix_eval(postfix_expr, OPERATORS) << endl;
     return 0;
 }

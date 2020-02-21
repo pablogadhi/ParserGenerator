@@ -25,30 +25,61 @@ State *StateMachine::end()
     return ending_state;
 }
 
-void StateMachine::print_machine()
+vector<State> StateMachine::flatten()
 {
-    vector<string> printed_states = vector<string>();
-    print_t_functions(*starting_state, printed_states);
+    vector<State> all_states = vector<State>();
+    get_next_states_into_vector(all_states, *starting_state);
+    return all_states;
 }
 
-void StateMachine::print_t_functions(State state, vector<string> &printed_states)
+void StateMachine::get_next_states_into_vector(vector<State> &vec, State state)
 {
-
-    if (find(printed_states.begin(), printed_states.end(), state.name()) == printed_states.end())
+    if (!is_item_in_vector<State>(state, vec))
     {
-        printed_states.push_back(state.name());
-        auto t_funcs = state.get_t_functions();
-        for (auto i = t_funcs.begin(); i != t_funcs.end(); i++)
+        vec.push_back(state);
+        for (auto &trans : state.get_t_functions())
         {
-            string trans_name = i->second->name();
-            char trans_char;
-            if (i->first != -1)
+            get_next_states_into_vector(vec, *(trans.second));
+        }
+    }
+}
+
+vector<int> StateMachine::get_all_input_symbols()
+{
+    auto all_states = flatten();
+    vector<int> symbols;
+    for (auto &state : all_states)
+    {
+        for (auto &trans : state.get_t_functions())
+        {
+            if (!is_item_in_vector(trans.first, symbols) and trans.first != -1)
             {
-                trans_char = (char)(i->first);
+                symbols.push_back(trans.first);
+            }
+        }
+    }
+    return symbols;
+}
+
+void StateMachine::print_machine()
+{
+    vector<State> flattend_machine = flatten();
+    for (auto &state : flattend_machine)
+    {
+        for (auto &trans : state.get_t_functions())
+        {
+            string trans_name = trans.second->name();
+            string trans_string;
+            if (trans.first != -1)
+            {
+                trans_string = (char)(trans.first);
+            }
+            else
+            {
+                trans_string = "";
             }
 
-            cout << state.name() << " {" << trans_char << "}-> " << trans_name << endl;
-            print_t_functions(*(i->second), printed_states);
+            cout << state.name() << " {" << trans_string << "}-> " << trans_name << endl;
         }
     }
 }
