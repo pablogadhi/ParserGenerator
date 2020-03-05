@@ -1,6 +1,7 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -9,18 +10,18 @@ using namespace std;
 class State
 {
   private:
-    vector<pair<int, State *>> t_functions;
+    vector<pair<int, shared_ptr<State>>> t_functions;
     string state_name;
 
   public:
-    State(string, vector<pair<int, State *>>);
+    State(string, vector<pair<int, shared_ptr<State>>>);
     State(string);
-    void set_t_functions(vector<pair<int, State *>>);
-    vector<pair<int, State *>> get_t_functions();
-    void add_t_function(pair<int, State *>);
+    void set_t_functions(vector<pair<int, shared_ptr<State>>>);
+    vector<pair<int, shared_ptr<State>>> get_t_functions();
+    void add_t_function(pair<int, shared_ptr<State>>);
     string name();
-    vector<State *> get_next_e_states();
-    vector<State *> move(int);
+    vector<shared_ptr<State>> get_next_e_states();
+    vector<shared_ptr<State>> move(int);
     bool operator==(State &s)
     {
         if (state_name == s.name())

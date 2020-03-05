@@ -5,20 +5,20 @@
 #include <memory>
 #include <stack>
 
-PtrSet<State *> *e_closure(PtrSet<State *> *set)
+shared_ptr<PtrSet<shared_ptr<State>>> e_closure(shared_ptr<PtrSet<shared_ptr<State>>> set)
 {
-    stack<State *> s_stack;
+    stack<shared_ptr<State>> s_stack;
     for (auto state : set->get_items())
     {
         s_stack.push(state);
     }
-    PtrSet<State *> *e_closure_set = set;
+    shared_ptr<PtrSet<shared_ptr<State>>> e_closure_set = set;
 
     while (!s_stack.empty())
     {
-        State *t = s_stack.top();
+        shared_ptr<State> t = s_stack.top();
         s_stack.pop();
-        for (State *&u : t->get_next_e_states())
+        for (shared_ptr<State> &u : t->get_next_e_states())
         {
             if (!e_closure_set->has_item(u))
             {
@@ -31,9 +31,9 @@ PtrSet<State *> *e_closure(PtrSet<State *> *set)
     return e_closure_set;
 }
 
-PtrSet<PtrSet<State *> *> get_unmarked_states(PtrSet<PtrSet<State *> *> set)
+PtrSet<shared_ptr<PtrSet<shared_ptr<State>>>> get_unmarked_states(PtrSet<shared_ptr<PtrSet<shared_ptr<State>>>> set)
 {
-    PtrSet<PtrSet<State *> *> unmarked_states;
+    PtrSet<shared_ptr<PtrSet<shared_ptr<State>>>> unmarked_states;
     for (auto &state : set.get_items())
     {
         if (!state->is_marked())
@@ -44,24 +44,25 @@ PtrSet<PtrSet<State *> *> get_unmarked_states(PtrSet<PtrSet<State *> *> set)
     return unmarked_states;
 }
 
-PtrSet<State *> *move_set_of_states(PtrSet<State *> *set, int symbol)
+shared_ptr<PtrSet<shared_ptr<State>>> move_set_of_states(shared_ptr<PtrSet<shared_ptr<State>>> set, int symbol)
 {
-    vector<State *> result_vec;
+    vector<shared_ptr<State>> result_vec;
     for (auto &state : set->get_items())
     {
         auto moved_state = state->move(symbol);
         result_vec.insert(result_vec.end(), moved_state.begin(), moved_state.end());
     }
-    return new PtrSet<State *>(result_vec);
+    return make_shared<PtrSet<shared_ptr<State>>>(result_vec);
 }
 
 void dfa_from_nfa(StateMachine nfa)
 {
-    PtrSet<PtrSet<State *> *> d_states;
+    PtrSet<shared_ptr<PtrSet<shared_ptr<State>>>> d_states;
     int name_index = 0;
-    d_states.add(e_closure(new PtrSet<State *>(to_string(name_index), vector<State *>{(nfa.start())})));
+    d_states.add(e_closure(
+        make_shared<PtrSet<shared_ptr<State>>>(to_string(name_index), vector<shared_ptr<State>>{(nfa.start())})));
     auto symbols = nfa.get_all_input_symbols();
-    vector<pair<pair<PtrSet<State *> *, int>, PtrSet<State *> *>> d_tran;
+    vector<pair<pair<shared_ptr<PtrSet<shared_ptr<State>>>, int>, shared_ptr<PtrSet<shared_ptr<State>>>>> d_tran;
 
     auto unmarked_states = get_unmarked_states(d_states);
     while (!unmarked_states.empty())
@@ -75,7 +76,8 @@ void dfa_from_nfa(StateMachine nfa)
             if (!movements->empty())
             {
                 auto U = e_closure(movements);
-                if (!d_states.has_item(U))
+                auto U_in_d_states = d_states.has_item(U);
+                if (U_in_d_states == nullptr)
                 {
                     U->unmark();
                     name_index++;
@@ -84,8 +86,7 @@ void dfa_from_nfa(StateMachine nfa)
                 }
                 else
                 {
-                    // auto prev_state = d_states.get_item(U);
-                    // int i = 0;
+                    U->set_name(U_in_d_states->get_name());
                 }
                 d_tran.push_back(make_pair(make_pair(T, a), U));
             }

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <iostream>
 
-StateMachine::StateMachine(State *starting_state, State *ending_state)
+StateMachine::StateMachine(shared_ptr<State> starting_state, shared_ptr<State> ending_state)
     : starting_state(starting_state), ending_state(ending_state)
 {
 }
@@ -15,12 +15,12 @@ StateMachine::~StateMachine()
 {
 }
 
-State *StateMachine::start()
+shared_ptr<State> StateMachine::start()
 {
     return starting_state;
 }
 
-State *StateMachine::end()
+shared_ptr<State> StateMachine::end()
 {
     return ending_state;
 }

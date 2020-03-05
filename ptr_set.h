@@ -21,16 +21,16 @@ template <class T> class PtrSet : public Set<T>
         this->items = vector<T>();
     }
 
-    bool has_item(T item)
+    T has_item(T item)
     {
         for (T i : this->items)
         {
             if (*i == *item)
             {
-                return true;
+                return i;
             }
         }
-        return false;
+        return nullptr;
     }
 
     // <typename U = remove_pointer<T>::type> T get_item(T item)
