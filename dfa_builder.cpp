@@ -1,18 +1,18 @@
 #include "dfa_builder.h"
-#include "set.h"
-#include "utils.h"
+#include "ptr_set.h"
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <stack>
 
-Set<State *> *e_closure(Set<State *> *set)
+PtrSet<State *> *e_closure(PtrSet<State *> *set)
 {
     stack<State *> s_stack;
     for (auto state : set->get_items())
     {
         s_stack.push(state);
     }
-    Set<State *> *e_closure_set = set;
+    PtrSet<State *> *e_closure_set = set;
 
     while (!s_stack.empty())
     {
@@ -31,9 +31,9 @@ Set<State *> *e_closure(Set<State *> *set)
     return e_closure_set;
 }
 
-Set<Set<State *> *> get_unmarked_states(Set<Set<State *> *> set)
+PtrSet<PtrSet<State *> *> get_unmarked_states(PtrSet<PtrSet<State *> *> set)
 {
-    Set<Set<State *> *> unmarked_states;
+    PtrSet<PtrSet<State *> *> unmarked_states;
     for (auto &state : set.get_items())
     {
         if (!state->is_marked())
@@ -44,7 +44,7 @@ Set<Set<State *> *> get_unmarked_states(Set<Set<State *> *> set)
     return unmarked_states;
 }
 
-Set<State *> *move_set_of_states(Set<State *> *set, int symbol)
+PtrSet<State *> *move_set_of_states(PtrSet<State *> *set, int symbol)
 {
     vector<State *> result_vec;
     for (auto &state : set->get_items())
@@ -52,16 +52,16 @@ Set<State *> *move_set_of_states(Set<State *> *set, int symbol)
         auto moved_state = state->move(symbol);
         result_vec.insert(result_vec.end(), moved_state.begin(), moved_state.end());
     }
-    return new Set<State *>(result_vec);
+    return new PtrSet<State *>(result_vec);
 }
 
 void dfa_from_nfa(StateMachine nfa)
 {
-    Set<Set<State *> *> d_states;
+    PtrSet<PtrSet<State *> *> d_states;
     int name_index = 0;
-    d_states.add(e_closure(new Set<State *>(to_string(name_index), vector<State *>{(nfa.start())})));
+    d_states.add(e_closure(new PtrSet<State *>(to_string(name_index), vector<State *>{(nfa.start())})));
     auto symbols = nfa.get_all_input_symbols();
-    vector<pair<pair<Set<State *> *, int>, Set<State *> *>> d_tran;
+    vector<pair<pair<PtrSet<State *> *, int>, PtrSet<State *> *>> d_tran;
 
     auto unmarked_states = get_unmarked_states(d_states);
     while (!unmarked_states.empty())
@@ -81,6 +81,11 @@ void dfa_from_nfa(StateMachine nfa)
                     name_index++;
                     U->set_name(to_string(name_index));
                     d_states.add(U);
+                }
+                else
+                {
+                    // auto prev_state = d_states.get_item(U);
+                    // int i = 0;
                 }
                 d_tran.push_back(make_pair(make_pair(T, a), U));
             }
