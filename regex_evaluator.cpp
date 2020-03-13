@@ -1,13 +1,15 @@
 #include "dfa_builder.h"
 #include "nfa_builder.h"
+#include "tree_node.h"
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <stack>
 #include <vector>
 
 using namespace std;
 
-const vector<char> OPERATORS = {'|', '*', '.'};
+const vector<char> OPERATORS = {'|', '*', '.', '+', '?'};
 
 int get_precedence(char c)
 {
@@ -19,28 +21,11 @@ int get_precedence(char c)
     {
         return 2;
     }
-    else if (c == '*')
+    else if (c == '*' || c == '+' || c == '?')
     {
         return 3;
     }
     return 0;
-}
-
-StateMachine nfa_operations(char op, int &node_index, vector<StateMachine> operands)
-{
-    if (op == '|')
-    {
-        return nfa_from_or(operands[0], operands[1], node_index);
-    }
-    else if (op == '.')
-    {
-        return nfa_from_concat(operands[0], operands[1]);
-    }
-    else if (op == '*')
-    {
-        return nfa_from_kleene(operands[0], node_index);
-    }
-    return StateMachine(NULL, NULL);
 }
 
 bool is_operator_binary(char op)
@@ -64,7 +49,8 @@ string infix_to_postfix(string infix_string)
 
     for (char &c : infix_string)
     {
-        if (isalnum(c))
+        // TODO Chapuz corregir
+        if (isalnum(c) || c == '$')
         {
             output.push_back(c);
         }
@@ -103,15 +89,15 @@ string infix_to_postfix(string infix_string)
     return output;
 }
 
-StateMachine postfix_eval(string postfix_expr)
+template <class T, class F, class G> T postfix_eval(string postfix_expr, F operations, G basic_generator)
 {
-    stack<StateMachine> m_stack;
+    stack<T> m_stack;
     int state_index = 0;
     for (char &c : postfix_expr)
     {
         if (is_char_in_vector(OPERATORS, c))
         {
-            StateMachine a, b;
+            T a, b;
             a = m_stack.top();
             m_stack.pop();
 
@@ -119,16 +105,16 @@ StateMachine postfix_eval(string postfix_expr)
             {
                 b = m_stack.top();
                 m_stack.pop();
-                m_stack.push(nfa_operations(c, state_index, vector<StateMachine>{b, a}));
+                m_stack.push(operations(c, state_index, vector<T>{b, a}));
             }
             else
             {
-                m_stack.push(nfa_operations(c, state_index, vector<StateMachine>{a}));
+                m_stack.push(operations(c, state_index, vector<T>{a}));
             }
         }
         else
         {
-            m_stack.push(nfa_from_transition((int)c, state_index));
+            m_stack.push(basic_generator((int)c, state_index));
         }
     }
     return m_stack.top();
@@ -140,7 +126,9 @@ string add_concat_char(string original_string)
     char last_char;
     for (char &c : original_string)
     {
-        if (last_char == '*' || (last_char == ')' && c == '(') || (isalnum(last_char) && isalnum(c)))
+        // TODO Corregir chapuz de #
+        if (last_char == '*' || last_char == '+' || last_char == '?' || (last_char == ')' && c == '(') ||
+            (isalnum(last_char) && isalnum(c)) || c == '$')
         {
             out_string.push_back('.');
         }
@@ -151,21 +139,73 @@ string add_concat_char(string original_string)
     return out_string;
 }
 
+StateMachine nfa_operations(char op, int &node_index, vector<StateMachine> operands)
+{
+    if (op == '|')
+    {
+        return nfa_from_or(operands[0], operands[1], node_index);
+    }
+    else if (op == '.')
+    {
+        return nfa_from_concat(operands[0], operands[1]);
+    }
+    else if (op == '*')
+    {
+        return nfa_from_kleene(operands[0], node_index);
+    }
+    else if (op == '+')
+    {
+        auto kleene_r = nfa_from_kleene(operands[0], node_index);
+        return nfa_from_concat(operands[0], kleene_r);
+    }
+    else if (op == '?')
+    {
+        auto e_transition = nfa_from_transition(36, node_index);
+        return nfa_from_or(operands[0], e_transition, node_index);
+    }
+    return StateMachine(NULL, NULL);
+}
+
+TreeNode make_syntax_tree(char symbol, int &name_index, vector<TreeNode> children)
+{
+
+    if (children.size() == 1)
+    {
+        return TreeNode("", symbol, make_shared<TreeNode>(children[0]));
+    }
+    return TreeNode("", symbol, make_shared<TreeNode>(children[0]), make_shared<TreeNode>(children[1]));
+}
+
+TreeNode basic_syntax_node_generator(int symbol, int &name)
+{
+    auto node = TreeNode(to_string(name), symbol);
+    name++;
+    return node;
+}
+
 int main(int argc, char const *argv[])
 {
     string user_input;
     cout << "Escriba la expresión:" << endl;
     cin >> user_input;
-    user_input = add_concat_char(user_input);
+    // user_input = add_concat_char(user_input);
     cout << "Con concat: " << user_input << endl;
-    string postfix_expr = infix_to_postfix(user_input);
+    auto postfix_expr = infix_to_postfix(user_input);
     cout << "Postfix: " << postfix_expr << endl;
-    StateMachine machine = postfix_eval(postfix_expr);
-    machine.print_machine();
-    dfa_from_nfa(machine);
+    auto nfa = postfix_eval<StateMachine, function<StateMachine(char, int &, vector<StateMachine>)>,
+                            function<StateMachine(int, int &)>>(postfix_expr, nfa_operations, nfa_from_transition);
+    nfa.draw_machine("NFA.dot");
 
-    cout << endl;
-    // dfa.print_machine();
-    // cout << "Resultado: " << postfix_eval(postfix_expr, OPERATORS) << endl;
+    auto dfa_0 = dfa_from_nfa(nfa);
+    dfa_0.draw_machine("DFA_FROM_NFA.dot");
+
+    auto postfix_expr_sharp = postfix_expr;
+    postfix_expr_sharp.push_back('#');
+    postfix_expr_sharp.push_back('.');
+    auto syntax_tree =
+        postfix_eval<TreeNode, function<TreeNode(char, int &, vector<TreeNode>)>, function<TreeNode(int, int &)>>(
+            postfix_expr_sharp, make_syntax_tree, basic_syntax_node_generator);
+    // auto direct_dfa = dfa_from_syntax_tree(syntax_tree);
+
     return 0;
 }

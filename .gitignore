@@ -35,3 +35,7 @@ build/
 # Editor files
 .clang-format
 .vscode/
+
+# Output files
+*.dot
+*.ps

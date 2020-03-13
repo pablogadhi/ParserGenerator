@@ -122,26 +122,26 @@ template <class T> class Set
     }
 };
 
-template <class T> Set<T> set_union(Set<T> set_a, Set<T> set_b)
+template <class SetT, class T> SetT set_union(SetT set_a, SetT set_b)
 {
     vector<T> output;
     std::set_union(set_a.get_items().begin(), set_a.get_items().end(), set_b.get_items().begin(),
                    set_b.get_items().end(), back_inserter(output));
-    return Set<T>(output);
+    return SetT(output);
 }
-template <class T> Set<T> set_intersec(Set<T> set_a, Set<T> set_b)
+template <class SetT, class T> SetT set_intersec(SetT set_a, SetT set_b)
 {
     vector<T> output;
     std::set_intersection(set_a.get_items().begin(), set_a.get_items().end(), set_b.get_items().begin(),
                           set_b.get_items().end(), back_inserter(output));
-    return Set<T>(output);
+    return SetT(output);
 }
-template <class T> Set<T> set_diff(Set<T> set_a, Set<T> set_b)
+template <class SetT, class T> SetT set_diff(SetT set_a, SetT set_b)
 {
     vector<T> output;
     std::set_difference(set_a.get_items().begin(), set_a.get_items().end(), set_b.get_items().begin(),
                         set_b.get_items().end(), back_inserter(output));
-    return Set<T>(output);
+    return SetT(output);
 }
 
 #endif

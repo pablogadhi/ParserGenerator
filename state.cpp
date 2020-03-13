@@ -25,6 +25,11 @@ void State::add_t_function(pair<int, shared_ptr<State>> new_func)
     t_functions.push_back(new_func);
 }
 
+void State::remove_t_function_at(int index)
+{
+    t_functions.erase(t_functions.begin() + index);
+}
+
 string State::name()
 {
     return state_name;
@@ -35,7 +40,7 @@ vector<shared_ptr<State>> State::get_next_e_states()
     vector<shared_ptr<State>> e_states = vector<shared_ptr<State>>();
     for (auto &trans : get_t_functions())
     {
-        if (trans.first == -1)
+        if (trans.first == 36)
         {
             e_states.push_back(trans.second);
         }
