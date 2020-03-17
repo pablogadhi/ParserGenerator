@@ -110,7 +110,8 @@ void StateMachine::draw_machine(string file_name)
             delete[] c_name;
             string edge_label;
             edge_label.push_back((char)trans.first);
-            agedge(graph, first_node, second_node, (char *)edge_label.c_str(), TRUE);
+            auto edge = agedge(graph, first_node, second_node, (char *)edge_label.c_str(), TRUE);
+            agsafeset(edge, (char *)"label", (char *)edge_label.c_str(), (char *)edge_label.c_str());
         }
     }
     agsafeset(graph, (char *)"rankdir", (char *)"LR", (char *)"LR");
@@ -119,4 +120,34 @@ void StateMachine::draw_machine(string file_name)
     gvRenderFilename(gvc, graph, "dot", file_name.c_str());
     gvFreeLayout(gvc, graph);
     agclose(graph);
+}
+
+StateMachine StateMachine::make_copy(int &name_index)
+{
+    vector<shared_ptr<State>> copied_states;
+    vector<shared_ptr<State>> original_states = flatten();
+    map<string, shared_ptr<State>> name_map;
+    for (auto &state : original_states)
+    {
+        if (name_map.find(state->name()) == name_map.end())
+        {
+            name_index++;
+            auto new_state_name = to_string(name_index);
+            auto new_state = make_shared<State>(State(new_state_name));
+            copied_states.push_back(new_state);
+            name_map[state->name()] = new_state;
+        }
+    }
+
+    for (auto &state : original_states)
+    {
+        auto new_state = name_map[state->name()];
+        for (auto &trans : state->get_t_functions())
+        {
+            auto state_to_trans = name_map[trans.second->name()];
+            new_state->add_t_function(make_pair(trans.first, state_to_trans));
+        }
+    }
+
+    return StateMachine(copied_states[0], copied_states[copied_states.size() - 1]);
 }

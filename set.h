@@ -12,7 +12,7 @@ using namespace std;
 template <class T> class Set
 {
   protected:
-    string name;
+    string name = "";
     vector<T> items;
     bool marked = false;
 
@@ -27,8 +27,6 @@ template <class T> class Set
 
     Set()
     {
-        name = "";
-        items = vector<T>();
     }
 
     string get_name()
@@ -41,7 +39,7 @@ template <class T> class Set
         name = new_name;
     }
 
-    vector<T> get_items()
+    vector<T> get_items() const
     {
         return items;
     }
@@ -71,28 +69,33 @@ template <class T> class Set
         return items.empty();
     }
 
-    int size()
+    int size() const
     {
         return items.size();
     }
 
-    bool has_item(T item)
+    auto begin()
     {
-        return is_item_in_vector(item, items);
+        return items.begin();
     }
 
-    T get_item(T item)
+    auto end()
     {
-        return find(items.begin(), items.end(), item);
+        return items.end();
     }
 
-    bool operator==(Set &s)
+    T &operator[](int i)
+    {
+        return items[i];
+    }
+
+    bool operator==(const Set &s)
     {
         bool equal = true;
         if (size() == s.size())
         {
             auto other_items = s.get_items();
-            auto self_items = items;
+            auto self_items = this->items;
             sort(other_items.begin(), other_items.end());
             sort(self_items.begin(), self_items.end());
             for (int i = 0; i < self_items.size(); i++)
@@ -120,27 +123,44 @@ template <class T> class Set
         }
         return false;
     }
+
+    int has_item(T &item)
+    {
+        // return is_item_in_vector(item, items);
+        if (items.size() == 0)
+        {
+            return -1;
+        }
+
+        auto iter = find(items.begin(), items.end(), item);
+        if (iter != items.end())
+        {
+            return distance(items.begin(), iter);
+        }
+        else if (item == items[items.size() - 1])
+        {
+            return items.size() - 1;
+        }
+        return -1;
+    }
 };
 
 template <class SetT, class T> SetT set_union(SetT set_a, SetT set_b)
 {
     vector<T> output;
-    std::set_union(set_a.get_items().begin(), set_a.get_items().end(), set_b.get_items().begin(),
-                   set_b.get_items().end(), back_inserter(output));
+    std::set_union(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
     return SetT(output);
 }
 template <class SetT, class T> SetT set_intersec(SetT set_a, SetT set_b)
 {
     vector<T> output;
-    std::set_intersection(set_a.get_items().begin(), set_a.get_items().end(), set_b.get_items().begin(),
-                          set_b.get_items().end(), back_inserter(output));
+    std::set_intersection(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
     return SetT(output);
 }
 template <class SetT, class T> SetT set_diff(SetT set_a, SetT set_b)
 {
     vector<T> output;
-    std::set_difference(set_a.get_items().begin(), set_a.get_items().end(), set_b.get_items().begin(),
-                        set_b.get_items().end(), back_inserter(output));
+    std::set_difference(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
     return SetT(output);
 }
 

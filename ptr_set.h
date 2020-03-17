@@ -33,12 +33,12 @@ template <class T> class PtrSet : public Set<T>
         return nullptr;
     }
 
-    bool operator==(PtrSet &s)
+    bool operator==(const PtrSet &s)
     {
         bool equal = true;
         if (this->size() == s.size())
         {
-            auto other_items = s.get_items();
+            auto other_items = s;
             auto self_items = this->items;
             sort(other_items.begin(), other_items.end());
             sort(self_items.begin(), self_items.end());

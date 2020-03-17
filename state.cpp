@@ -1,5 +1,9 @@
 #include "state.h"
 
+State::State()
+{
+}
+
 State::State(string s_name)
 {
     state_name = s_name;
@@ -30,32 +34,32 @@ void State::remove_t_function_at(int index)
     t_functions.erase(t_functions.begin() + index);
 }
 
-string State::name()
+string State::name() const
 {
     return state_name;
 }
 
-vector<shared_ptr<State>> State::get_next_e_states()
+Set<State> State::get_next_e_states()
 {
-    vector<shared_ptr<State>> e_states = vector<shared_ptr<State>>();
+    Set<State> e_states;
     for (auto &trans : get_t_functions())
     {
         if (trans.first == 36)
         {
-            e_states.push_back(trans.second);
+            e_states.add(*trans.second);
         }
     }
     return e_states;
 }
 
-vector<shared_ptr<State>> State::move(int symbol)
+Set<State> State::move(int symbol)
 {
-    vector<shared_ptr<State>> movements;
+    Set<State> movements;
     for (auto &trans : t_functions)
     {
         if (trans.first == symbol)
         {
-            movements.push_back(trans.second);
+            movements.add(*trans.second);
         }
     }
     return movements;

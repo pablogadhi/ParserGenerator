@@ -22,6 +22,7 @@ class StateMachine
     vector<int> get_all_input_symbols();
     void print_machine();
     void draw_machine(string file_name);
+    StateMachine make_copy(int &);
 };
 
 #endif
