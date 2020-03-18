@@ -172,14 +172,14 @@ TreeNode make_syntax_tree(char symbol, int &name_index, vector<TreeNode> childre
 
     if (children.size() == 1)
     {
-        return TreeNode("", symbol, make_shared<TreeNode>(children[0]));
+        return TreeNode(-1, symbol, make_shared<TreeNode>(children[0]));
     }
-    return TreeNode("", symbol, make_shared<TreeNode>(children[0]), make_shared<TreeNode>(children[1]));
+    return TreeNode(-1, symbol, make_shared<TreeNode>(children[0]), make_shared<TreeNode>(children[1]));
 }
 
 TreeNode basic_syntax_node_generator(int symbol, int &name)
 {
-    auto node = TreeNode(to_string(name), symbol);
+    auto node = TreeNode(name, symbol);
     name++;
     return node;
 }
@@ -200,13 +200,14 @@ int main(int argc, char const *argv[])
     auto dfa_0 = dfa_from_nfa(nfa);
     dfa_0.draw_machine("DFA_FROM_NFA.dot");
 
-    // auto postfix_expr_sharp = postfix_expr;
-    // postfix_expr_sharp.push_back('#');
-    // postfix_expr_sharp.push_back('.');
-    // auto syntax_tree =
-    //     postfix_eval<TreeNode, function<TreeNode(char, int &, vector<TreeNode>)>, function<TreeNode(int, int &)>>(
-    //         postfix_expr_sharp, make_syntax_tree, basic_syntax_node_generator);
-    // auto direct_dfa = dfa_from_syntax_tree(syntax_tree);
+    auto postfix_expr_sharp = postfix_expr;
+    postfix_expr_sharp.push_back('#');
+    postfix_expr_sharp.push_back('.');
+    auto syntax_tree =
+        postfix_eval<TreeNode, function<TreeNode(char, int &, vector<TreeNode>)>, function<TreeNode(int, int &)>>(
+            postfix_expr_sharp, make_syntax_tree, basic_syntax_node_generator);
+    auto direct_dfa = dfa_from_syntax_tree(syntax_tree);
+    direct_dfa.draw_machine("DIRECT_DFA.dot");
 
     return 0;
 }

@@ -4,13 +4,13 @@ State::State()
 {
 }
 
-State::State(string name)
+State::State(int name)
 {
     s_name = name;
     t_functions = vector<pair<int, shared_ptr<State>>>();
 }
 
-State::State(string name, vector<pair<int, shared_ptr<State>>> t_functions) : s_name(name), t_functions(t_functions)
+State::State(int name, vector<pair<int, shared_ptr<State>>> t_functions) : s_name(name), t_functions(t_functions)
 {
 }
 
@@ -34,7 +34,7 @@ void State::remove_t_function_at(int index)
     t_functions.erase(t_functions.begin() + index);
 }
 
-string State::name() const
+int State::name() const
 {
     return s_name;
 }

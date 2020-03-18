@@ -2,8 +2,8 @@
 
 StateMachine nfa_from_or(StateMachine &a, StateMachine &b, int &last_index)
 {
-    shared_ptr<State> first_state = make_shared<State>(to_string(last_index + 1));
-    shared_ptr<State> last_state = make_shared<State>(to_string(last_index + 2));
+    shared_ptr<State> first_state = make_shared<State>(last_index + 1);
+    shared_ptr<State> last_state = make_shared<State>(last_index + 2);
     first_state->set_t_functions(
         vector<pair<int, shared_ptr<State>>>{make_pair(36, a.start()), make_pair(36, b.start())});
     a.end()->set_t_functions(vector<pair<int, shared_ptr<State>>>{make_pair(36, last_state)});
@@ -35,8 +35,8 @@ StateMachine nfa_from_concat(StateMachine &a, StateMachine &b)
 
 StateMachine nfa_from_kleene(StateMachine &a, int &last_index)
 {
-    shared_ptr<State> first_state = make_shared<State>(to_string(last_index + 1));
-    shared_ptr<State> last_state = make_shared<State>(to_string(last_index + 2));
+    shared_ptr<State> first_state = make_shared<State>(last_index + 1);
+    shared_ptr<State> last_state = make_shared<State>(last_index + 2);
     first_state->set_t_functions(
         vector<pair<int, shared_ptr<State>>>{make_pair(36, a.start()), make_pair(36, last_state)});
     a.end()->add_t_function(make_pair(36, a.start()));
@@ -49,10 +49,10 @@ StateMachine nfa_from_kleene(StateMachine &a, int &last_index)
 
 StateMachine nfa_from_transition(int transition, int &last_index)
 {
-    shared_ptr<State> last_state = make_shared<State>(to_string(last_index + 2));
-    string first_name_string = to_string(last_index + 1);
+    shared_ptr<State> last_state = make_shared<State>(last_index + 2);
+    int first_name = last_index + 1;
     shared_ptr<State> first_state =
-        make_shared<State>(first_name_string, vector<pair<int, shared_ptr<State>>>{make_pair(transition, last_state)});
+        make_shared<State>(first_name, vector<pair<int, shared_ptr<State>>>{make_pair(transition, last_state)});
     last_index += 2;
     last_state->change_type(last);
     return StateMachine(first_state, last_state);

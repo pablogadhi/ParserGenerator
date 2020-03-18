@@ -74,7 +74,7 @@ void StateMachine::print_machine()
     {
         for (auto &trans : state->get_t_functions())
         {
-            string trans_name = trans.second->name();
+            int trans_name = trans.second->name();
             char trans_c = (char)(trans.first);
 
             cout << state->name() << " {" << trans_c << "}-> " << trans_name << endl;
@@ -90,8 +90,8 @@ void StateMachine::draw_machine(string file_name)
     vector<shared_ptr<State>> flattend_machine = flatten();
     for (auto &state : flattend_machine)
     {
-        char *c_name = new char[state->name().length() + 1];
-        strcpy(c_name, state->name().c_str());
+        char *c_name = new char[to_string(state->name()).length() + 1];
+        strcpy(c_name, to_string(state->name()).c_str());
         auto first_node = agnode(graph, c_name, TRUE);
         if (state->type() == last)
         {
@@ -104,8 +104,8 @@ void StateMachine::draw_machine(string file_name)
         delete[] c_name;
         for (auto &trans : state->get_t_functions())
         {
-            c_name = new char[trans.second->name().length() + 1];
-            strcpy(c_name, trans.second->name().c_str());
+            c_name = new char[to_string(trans.second->name()).length() + 1];
+            strcpy(c_name, to_string(trans.second->name()).c_str());
             auto second_node = agnode(graph, c_name, TRUE);
             delete[] c_name;
             string edge_label;
@@ -126,13 +126,13 @@ StateMachine StateMachine::make_copy(int &name_index)
 {
     vector<shared_ptr<State>> copied_states;
     vector<shared_ptr<State>> original_states = flatten();
-    map<string, shared_ptr<State>> name_map;
+    map<int, shared_ptr<State>> name_map;
     for (auto &state : original_states)
     {
         if (name_map.find(state->name()) == name_map.end())
         {
             name_index++;
-            auto new_state_name = to_string(name_index);
+            auto new_state_name = name_index;
             auto new_state = make_shared<State>(State(new_state_name));
             copied_states.push_back(new_state);
             name_map[state->name()] = new_state;

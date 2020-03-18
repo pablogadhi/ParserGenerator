@@ -12,12 +12,12 @@ using namespace std;
 template <class T> class Set
 {
   protected:
-    string name = "";
+    int name = -1;
     vector<T> items;
     bool marked = false;
 
   public:
-    Set(string name, vector<T> items) : name(name), items(items)
+    Set(int name, vector<T> items) : name(name), items(items)
     {
     }
 
@@ -29,12 +29,12 @@ template <class T> class Set
     {
     }
 
-    string get_name()
+    int get_name()
     {
         return name;
     }
 
-    void set_name(string new_name)
+    void set_name(int new_name)
     {
         name = new_name;
     }
@@ -117,7 +117,7 @@ template <class T> class Set
 
     bool operator<(Set &s)
     {
-        if (stoi(name) < stoi(s.get_name()))
+        if (name < s.get_name())
         {
             return true;
         }
@@ -145,23 +145,23 @@ template <class T> class Set
     }
 };
 
-template <class SetT, class T> SetT set_union(SetT set_a, SetT set_b)
+template <class T> Set<T> union_between_sets(Set<T> set_a, Set<T> set_b)
 {
     vector<T> output;
     std::set_union(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
-    return SetT(output);
+    return Set<T>(output);
 }
-template <class SetT, class T> SetT set_intersec(SetT set_a, SetT set_b)
+template <class T> Set<T> intersec_between_sets(Set<T> set_a, Set<T> set_b)
 {
     vector<T> output;
     std::set_intersection(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
-    return SetT(output);
+    return Set<T>(output);
 }
-template <class SetT, class T> SetT set_diff(SetT set_a, SetT set_b)
+template <class T> Set<T> diff_between_sets(Set<T> set_a, Set<T> set_b)
 {
     vector<T> output;
     std::set_difference(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
-    return SetT(output);
+    return Set<T>(output);
 }
 
 #endif
