@@ -8,7 +8,7 @@
 
 using namespace std;
 
-enum StateType
+enum state_type
 {
     first,
     last,
@@ -19,8 +19,8 @@ class State
 {
   private:
     vector<pair<int, shared_ptr<State>>> t_functions;
-    string state_name = "";
-    StateType type = normal;
+    string s_name = "";
+    state_type s_type = normal;
 
   public:
     State(string, vector<pair<int, shared_ptr<State>>>);
@@ -31,11 +31,13 @@ class State
     void add_t_function(pair<int, shared_ptr<State>>);
     void remove_t_function_at(int);
     string name() const;
-    Set<State> get_next_e_states();
+    void change_type(state_type);
+    state_type type();
+    Set<State> next_e_states();
     Set<State> move(int);
     bool operator==(const State &s)
     {
-        if (state_name == s.name())
+        if (s_name == s.name())
         {
             return true;
         }

@@ -18,7 +18,7 @@ Set<State> e_closure(Set<State> set)
     {
         State t = s_stack.top();
         s_stack.pop();
-        for (State &u : t.get_next_e_states())
+        for (State &u : t.next_e_states())
         {
             if (e_closure_set.has_item(u) == -1)
             {
@@ -63,20 +63,36 @@ Set<State> move_set_of_states(Set<State> set, int symbol)
     return Set(result_vec);
 }
 
+bool is_set_acceptance(Set<State> set)
+{
+    for (auto &state : set)
+    {
+        if (state.type() == last)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 StateMachine machine_from_transitions(vector<pair<pair<Set<State>, int>, Set<State>>> d_tran)
 {
     Set<State> created_states;
     vector<shared_ptr<State>> state_ptrs;
     for (auto &trans : d_tran)
     {
-        string state_names[2] = {trans.first.first.get_name(), trans.second.get_name()};
+        Set<State> states_in_tran[2] = {trans.first.first, trans.second};
         int indices[2];
         for (int i = 0; i < 2; i++)
         {
-            auto new_state = State(state_names[i]);
+            auto new_state = State(states_in_tran[i].get_name());
             auto item_index = created_states.has_item(new_state);
             if (item_index == -1)
             {
+                if (is_set_acceptance(states_in_tran[i]))
+                {
+                    new_state.change_type(last);
+                }
                 created_states.add(new_state);
                 indices[i] = created_states.size() - 1;
                 state_ptrs.push_back(make_shared<State>(created_states[indices[i]]));

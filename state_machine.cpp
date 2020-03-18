@@ -93,7 +93,7 @@ void StateMachine::draw_machine(string file_name)
         char *c_name = new char[state->name().length() + 1];
         strcpy(c_name, state->name().c_str());
         auto first_node = agnode(graph, c_name, TRUE);
-        if (*state == *(this->ending_state))
+        if (state->type() == last)
         {
             agsafeset(first_node, (char *)"shape", (char *)"doublecircle", (char *)"doublecircle");
         }
