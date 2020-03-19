@@ -13,7 +13,6 @@ class StateMachine
   public:
     StateMachine();
     StateMachine(shared_ptr<State>, shared_ptr<State>);
-    // StateMachine(StateMachine &);
     ~StateMachine();
     shared_ptr<State> start();
     shared_ptr<State> end();
@@ -23,6 +22,10 @@ class StateMachine
     void print_machine();
     void draw_machine(string file_name);
     StateMachine make_copy(int &);
+    Set<State> accepting_states();
 };
+
+Set<State> e_closure(Set<State>);
+Set<State> move_set_of_states(Set<State>, int);
 
 #endif

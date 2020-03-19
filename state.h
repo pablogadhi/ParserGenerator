@@ -10,8 +10,8 @@ using namespace std;
 
 enum state_type
 {
-    first,
-    last,
+    starting,
+    accepting,
     normal
 };
 

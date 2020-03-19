@@ -1,8 +1,5 @@
 #include "dfa_builder.h"
-#include "ptr_set.h"
-#include <map>
 #include <memory>
-#include <stack>
 
 template <class T> Set<Set<T>> get_unmarked_states(Set<Set<T>> set)
 {
@@ -29,7 +26,7 @@ bool is_set_acceptance(Set<State> set, int useless_param)
 {
     for (auto &state : set)
     {
-        if (state.type() == last)
+        if (state.type() == accepting)
         {
             return true;
         }
@@ -55,7 +52,7 @@ StateMachine machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_
             {
                 if (acceptance_check(states_in_tran[i], accept_criteria))
                 {
-                    new_state.change_type(last);
+                    new_state.change_type(accepting);
                 }
                 created_states.add(new_state);
                 indices[i] = created_states.size() - 1;
@@ -71,43 +68,6 @@ StateMachine machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_
     }
 
     return StateMachine(state_ptrs[0], state_ptrs[state_ptrs.size() - 1]);
-}
-
-Set<State> e_closure(Set<State> set)
-{
-    stack<State> s_stack;
-    for (auto state : set)
-    {
-        s_stack.push(state);
-    }
-    Set<State> e_closure_set = set;
-
-    while (!s_stack.empty())
-    {
-        State t = s_stack.top();
-        s_stack.pop();
-        for (State &u : t.next_e_states())
-        {
-            if (e_closure_set.has_item(u) == -1)
-            {
-                e_closure_set.add(u);
-                s_stack.push(u);
-            }
-        }
-    }
-
-    return e_closure_set;
-}
-
-Set<State> move_set_of_states(Set<State> set, int symbol)
-{
-    vector<State> result_vec;
-    for (auto &state : set)
-    {
-        auto moved_state = state.move(symbol);
-        result_vec.insert(result_vec.end(), moved_state.begin(), moved_state.end());
-    }
-    return Set(result_vec);
 }
 
 StateMachine dfa_from_nfa(StateMachine nfa)
@@ -164,6 +124,8 @@ void nullable(shared_ptr<TreeNode> node)
     switch (node->symbol())
     {
     case 36:
+    case 42:
+    case 63:
         is_nullable = true;
         break;
     case 124:
@@ -174,8 +136,8 @@ void nullable(shared_ptr<TreeNode> node)
         is_nullable = any_cast<bool>(node->left()->get_info()["nullable"]) &&
                       any_cast<bool>(node->right()->get_info()["nullable"]);
         break;
-    case 42:
-        is_nullable = true;
+    case 43:
+        is_nullable = any_cast<bool>(node->left()->get_info()["nullable"]);
         break;
     default:
         is_nullable = false;
@@ -227,6 +189,8 @@ void first_last_pos(shared_ptr<TreeNode> node, string info_entry_key, bool last)
         }
         break;
     case 42:
+    case 43:
+    case 63:
         result = any_cast<Set<int>>(important_child->get_info()[info_entry_key]);
         break;
     default:
@@ -262,7 +226,7 @@ void followpos(shared_ptr<TreeNode> node)
                 union_between_sets<int>(any_cast<Set<int>>(node->right()->get_info()["firstpos"]), prev_followpos));
         }
     }
-    else if (node->symbol() == 42)
+    else if (node->symbol() == 42 || node->symbol() == 43)
     {
         for (auto &position : any_cast<Set<int>>(node->get_info()["lastpos"]))
         {

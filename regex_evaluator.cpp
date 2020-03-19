@@ -1,5 +1,6 @@
 #include "dfa_builder.h"
 #include "nfa_builder.h"
+#include "simulation.h"
 #include "tree_node.h"
 #include <algorithm>
 #include <functional>
@@ -187,18 +188,18 @@ TreeNode basic_syntax_node_generator(int symbol, int &name)
 int main(int argc, char const *argv[])
 {
     string user_input;
-    cout << "Escriba la expresión:" << endl;
+    cout << "Escriba la expresión regular:" << endl;
     cin >> user_input;
     // user_input = add_concat_char(user_input);
-    cout << "Con concat: " << user_input << endl;
+    // cout << "Con concat: " << user_input << endl;
     auto postfix_expr = infix_to_postfix(user_input);
     cout << "Postfix: " << postfix_expr << endl;
     auto nfa = postfix_eval<StateMachine, function<StateMachine(char, int &, vector<StateMachine>)>,
                             function<StateMachine(int, int &)>>(postfix_expr, nfa_operations, nfa_from_transition);
-    nfa.draw_machine("NFA.dot");
+    nfa.draw_machine("NFA");
 
     auto dfa_0 = dfa_from_nfa(nfa);
-    dfa_0.draw_machine("DFA_FROM_NFA.dot");
+    dfa_0.draw_machine("DFA_FROM_NFA");
 
     auto postfix_expr_sharp = postfix_expr;
     postfix_expr_sharp.push_back('#');
@@ -207,7 +208,23 @@ int main(int argc, char const *argv[])
         postfix_eval<TreeNode, function<TreeNode(char, int &, vector<TreeNode>)>, function<TreeNode(int, int &)>>(
             postfix_expr_sharp, make_syntax_tree, basic_syntax_node_generator);
     auto direct_dfa = dfa_from_syntax_tree(syntax_tree);
-    direct_dfa.draw_machine("DIRECT_DFA.dot");
+    direct_dfa.draw_machine("DIRECT_DFA");
+
+    cout << endl << "Escriba la cadena a evaluar" << endl;
+    cin >> user_input;
+    bool accept;
+    while (user_input != "quit")
+    {
+        accept = simulate_nfa(user_input, nfa);
+        cout << "NFA: " << accept << endl;
+        accept = simulate_dfa(user_input, dfa_0);
+        cout << "DFA de NFA: " << accept << endl;
+        accept = simulate_nfa(user_input, direct_dfa);
+        cout << "DFA directo: " << accept << endl;
+
+        cout << endl << "Escriba la cadena a evaluar" << endl;
+        cin >> user_input;
+    }
 
     return 0;
 }

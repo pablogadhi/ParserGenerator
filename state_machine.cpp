@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <stack>
 extern "C"
 {
 #include <graphviz/cgraph.h>
@@ -87,19 +88,24 @@ void StateMachine::draw_machine(string file_name)
     Agraph_t *graph = agopen((char *)"StateMachine", Agdirected, 0);
     GVC_t *gvc = gvContext();
 
+    starting_state->change_type(starting);
     vector<shared_ptr<State>> flattend_machine = flatten();
     for (auto &state : flattend_machine)
     {
         char *c_name = new char[to_string(state->name()).length() + 1];
         strcpy(c_name, to_string(state->name()).c_str());
         auto first_node = agnode(graph, c_name, TRUE);
-        if (state->type() == last)
+        if (state->type() == accepting)
         {
-            agsafeset(first_node, (char *)"shape", (char *)"doublecircle", (char *)"doublecircle");
+            agsafeset(first_node, (char *)"shape", (char *)"doublecircle", (char *)"circle");
         }
         else
         {
             agsafeset(first_node, (char *)"shape", (char *)"circle", (char *)"circle");
+            if (state->type() == starting)
+            {
+                agsafeset(first_node, (char *)"color", (char *)"green", (char *)"black");
+            }
         }
         delete[] c_name;
         for (auto &trans : state->get_t_functions())
@@ -117,9 +123,12 @@ void StateMachine::draw_machine(string file_name)
     agsafeset(graph, (char *)"rankdir", (char *)"LR", (char *)"LR");
 
     gvLayout(gvc, graph, "dot");
-    gvRenderFilename(gvc, graph, "dot", file_name.c_str());
+    gvRenderFilename(gvc, graph, "dot", (file_name + ".dot").c_str());
     gvFreeLayout(gvc, graph);
     agclose(graph);
+
+    string render_command = "dot -Tps " + file_name + ".dot" + " -o " + file_name + ".ps";
+    system(render_command.c_str());
 }
 
 StateMachine StateMachine::make_copy(int &name_index)
@@ -150,4 +159,54 @@ StateMachine StateMachine::make_copy(int &name_index)
     }
 
     return StateMachine(copied_states[0], copied_states[copied_states.size() - 1]);
+}
+
+Set<State> StateMachine::accepting_states()
+{
+    Set<State> set;
+    for (auto &state : flatten())
+    {
+        if (state->type() == accepting)
+        {
+            set.add(*state);
+        }
+    }
+    return set;
+}
+
+Set<State> e_closure(Set<State> set)
+{
+    stack<State> s_stack;
+    for (auto state : set)
+    {
+        s_stack.push(state);
+    }
+    Set<State> e_closure_set = set;
+
+    while (!s_stack.empty())
+    {
+        State t = s_stack.top();
+        s_stack.pop();
+        for (State &u : t.next_e_states())
+        {
+            if (e_closure_set.has_item(u) == -1)
+            {
+                e_closure_set.add(u);
+                s_stack.push(u);
+            }
+        }
+    }
+
+    return e_closure_set;
+}
+
+Set<State> move_set_of_states(Set<State> set, int symbol)
+{
+    vector<State> result_vec;
+    for (auto &state : set)
+    {
+        auto moved_state = state.move(symbol);
+        result_vec.insert(result_vec.end(), moved_state.begin(), moved_state.end());
+    }
+    return Set(result_vec);
 }
