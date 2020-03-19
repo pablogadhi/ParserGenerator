@@ -1,7 +1,6 @@
 #ifndef SET_H
 #define SET_H
 
-#include "state.h"
 #include "utils.h"
 #include <algorithm>
 #include <string>

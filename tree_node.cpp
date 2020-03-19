@@ -1,5 +1,6 @@
 #include "tree_node.h"
 #include "utils.h"
+#include <iostream>
 
 TreeNode::TreeNode()
 {
@@ -62,6 +63,7 @@ int TreeNode::name()
 vector<shared_ptr<TreeNode>> TreeNode::flatten()
 {
     vector<shared_ptr<TreeNode>> result;
+    result.push_back(make_shared<TreeNode>(*this));
     get_children_and_beyond_into_vec(result);
     return result;
 }
@@ -106,4 +108,43 @@ vector<int> TreeNode::get_all_input_symbols()
         }
     }
     return symbols;
+}
+
+void TreeNode::print_info()
+{
+    for (auto &node : flatten())
+    {
+        auto node_info = node->get_info();
+        cout << "Nodo " << node->name() << ":" << endl;
+        cout << "Simbolo " << (char)(node->symbol()) << ":" << endl;
+        cout << "Nullable: " << any_cast<bool>(node_info["nullable"]) << endl;
+
+        auto pos_set = any_cast<Set<int>>(node_info["firstpos"]);
+        string pos_str = "";
+        for (auto &i : pos_set)
+        {
+            pos_str = pos_str + to_string(i) + ",";
+        }
+        cout << "Firstpost: " << pos_str << endl;
+
+        pos_set = any_cast<Set<int>>(node_info["lastpos"]);
+        pos_str = "";
+        for (auto &i : pos_set)
+        {
+            pos_str = pos_str + to_string(i) + ",";
+        }
+        cout << "Lastpos: " << pos_str << endl;
+
+        if (node_info.find("followpos") != node_info.end())
+        {
+            pos_set = any_cast<Set<int>>(node->get_info()["followpos"]);
+            pos_str = "";
+            for (auto &i : pos_set)
+            {
+                pos_str = pos_str + to_string(i) + ",";
+            }
+            cout << "Followpos: " << pos_str << endl;
+        }
+        cout << endl;
+    }
 }

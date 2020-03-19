@@ -88,25 +88,33 @@ void StateMachine::draw_machine(string file_name)
     Agraph_t *graph = agopen((char *)"StateMachine", Agdirected, 0);
     GVC_t *gvc = gvContext();
 
-    starting_state->change_type(starting);
     vector<shared_ptr<State>> flattend_machine = flatten();
+
+    if (flattend_machine.size() == 1)
+    {
+        print_machine();
+    }
+
     for (auto &state : flattend_machine)
     {
         char *c_name = new char[to_string(state->name()).length() + 1];
         strcpy(c_name, to_string(state->name()).c_str());
         auto first_node = agnode(graph, c_name, TRUE);
-        if (state->type() == accepting)
+
+        if (state->is_accepting())
         {
             agsafeset(first_node, (char *)"shape", (char *)"doublecircle", (char *)"circle");
         }
         else
         {
             agsafeset(first_node, (char *)"shape", (char *)"circle", (char *)"circle");
-            if (state->type() == starting)
-            {
-                agsafeset(first_node, (char *)"color", (char *)"green", (char *)"black");
-            }
         }
+
+        if (*starting_state == *state)
+        {
+            agsafeset(first_node, (char *)"color", (char *)"green", (char *)"black");
+        }
+
         delete[] c_name;
         for (auto &trans : state->get_t_functions())
         {
@@ -114,10 +122,14 @@ void StateMachine::draw_machine(string file_name)
             strcpy(c_name, to_string(trans.second->name()).c_str());
             auto second_node = agnode(graph, c_name, TRUE);
             delete[] c_name;
-            string edge_label;
-            edge_label.push_back((char)trans.first);
-            auto edge = agedge(graph, first_node, second_node, (char *)edge_label.c_str(), TRUE);
-            agsafeset(edge, (char *)"label", (char *)edge_label.c_str(), (char *)edge_label.c_str());
+            // TODO Calculate string length correctly
+            char *edge_label = new char[10];
+            string edge_string = "";
+            edge_string.push_back((char)trans.first);
+            strcpy(edge_label, edge_string.c_str());
+            auto edge = agedge(graph, first_node, second_node, edge_label, TRUE);
+            agsafeset(edge, (char *)"label", edge_label, (char *)"");
+            delete[] edge_label;
         }
     }
     agsafeset(graph, (char *)"rankdir", (char *)"LR", (char *)"LR");
@@ -127,7 +139,7 @@ void StateMachine::draw_machine(string file_name)
     gvFreeLayout(gvc, graph);
     agclose(graph);
 
-    string render_command = "dot -Tps " + file_name + ".dot" + " -o " + file_name + ".ps";
+    string render_command = "dot -Tpng -Gdpi=300 " + file_name + ".dot" + " -o " + file_name + ".png";
     system(render_command.c_str());
 }
 
@@ -166,7 +178,7 @@ Set<State> StateMachine::accepting_states()
     Set<State> set;
     for (auto &state : flatten())
     {
-        if (state->type() == accepting)
+        if (state->is_accepting())
         {
             set.add(*state);
         }

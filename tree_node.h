@@ -1,6 +1,7 @@
 #ifndef TREE_NODE_H
 #define TREE_NODE_H
 
+#include "set.h"
 #include <any>
 #include <map>
 #include <memory>
@@ -34,6 +35,7 @@ class TreeNode
     void get_children_and_beyond_into_vec(vector<shared_ptr<TreeNode>> &);
     shared_ptr<TreeNode> find(int);
     vector<int> get_all_input_symbols();
+    void print_info();
 };
 
 #endif

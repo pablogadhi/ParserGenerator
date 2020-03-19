@@ -39,14 +39,14 @@ int State::name() const
     return s_name;
 }
 
-void State::change_type(state_type new_type)
+void State::set_as_accepting(bool accepting)
 {
-    s_type = new_type;
+    s_is_accepting = accepting;
 }
 
-state_type State::type()
+bool State::is_accepting()
 {
-    return s_type;
+    return s_is_accepting;
 }
 
 Set<State> State::next_e_states()

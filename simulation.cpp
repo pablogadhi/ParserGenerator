@@ -29,7 +29,7 @@ bool simulate_dfa(string str, StateMachine &dfa)
             current_state = movement[0];
         }
     }
-    if (current_state.type() == accepting)
+    if (current_state.is_accepting())
     {
         return true;
     }

@@ -8,19 +8,12 @@
 
 using namespace std;
 
-enum state_type
-{
-    starting,
-    accepting,
-    normal
-};
-
 class State
 {
   private:
     vector<pair<int, shared_ptr<State>>> t_functions;
     int s_name = -1;
-    state_type s_type = normal;
+    bool s_is_accepting = false;
 
   public:
     State(int, vector<pair<int, shared_ptr<State>>>);
@@ -31,8 +24,8 @@ class State
     void add_t_function(pair<int, shared_ptr<State>>);
     void remove_t_function_at(int);
     int name() const;
-    void change_type(state_type);
-    state_type type();
+    void set_as_accepting(bool);
+    bool is_accepting();
     Set<State> next_e_states();
     Set<State> move(int);
     bool operator==(const State &s)

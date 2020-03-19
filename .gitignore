@@ -39,3 +39,4 @@ build/
 # Output files
 *.dot
 *.ps
+*.png

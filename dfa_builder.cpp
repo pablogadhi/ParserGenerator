@@ -26,7 +26,7 @@ bool is_set_acceptance(Set<State> set, int useless_param)
 {
     for (auto &state : set)
     {
-        if (state.type() == accepting)
+        if (state.is_accepting())
         {
             return true;
         }
@@ -52,7 +52,7 @@ StateMachine machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_
             {
                 if (acceptance_check(states_in_tran[i], accept_criteria))
                 {
-                    new_state.change_type(accepting);
+                    new_state.set_as_accepting(true);
                 }
                 created_states.add(new_state);
                 indices[i] = created_states.size() - 1;
@@ -210,11 +210,11 @@ void followpos(shared_ptr<TreeNode> node)
     followpos(node->left());
     followpos(node->right());
 
-    auto prev_followpos = Set<int>();
     if (node->symbol() == 46)
     {
         for (auto &position : any_cast<Set<int>>(node->left()->get_info()["lastpos"]))
         {
+            auto prev_followpos = Set<int>();
             auto node_ptr = node->find(position);
             auto node_info = node_ptr->get_info();
             if (node_info.find("followpos") != node_info.end())
@@ -230,6 +230,7 @@ void followpos(shared_ptr<TreeNode> node)
     {
         for (auto &position : any_cast<Set<int>>(node->get_info()["lastpos"]))
         {
+            auto prev_followpos = Set<int>();
             auto node_ptr = node->find(position);
             auto node_info = node_ptr->get_info();
             if (node_info.find("followpos") != node_info.end())
@@ -296,6 +297,11 @@ StateMachine dfa_from_syntax_tree(TreeNode root)
                 U = union_between_sets(any_cast<Set<int>>(node->get_info()["followpos"]), U);
             }
 
+            if (U.size() == 0)
+            {
+                continue;
+            }
+
             auto U_index = d_states.has_item(U);
             if (U_index == -1)
             {
@@ -314,6 +320,7 @@ StateMachine dfa_from_syntax_tree(TreeNode root)
         unmarked_states = get_unmarked_states<int>(d_states);
     }
 
+    // root_ptr->print_info();
     auto sharp_pos = root_ptr->right()->name();
     return machine_from_transitions<int, function<bool(Set<int>, int)>, int>(d_tran, has_set_sharp_node, sharp_pos);
 }
