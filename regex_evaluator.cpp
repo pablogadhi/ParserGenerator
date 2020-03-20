@@ -216,7 +216,7 @@ int main(int argc, char const *argv[])
     while (user_input != "quit")
     {
         accept = simulate_nfa(user_input, nfa);
-        cout << "NFA: " << accept << endl;
+        cout << endl << "NFA: " << accept << endl;
         accept = simulate_dfa(user_input, dfa_0);
         cout << "DFA de NFA: " << accept << endl;
         accept = simulate_nfa(user_input, direct_dfa);
