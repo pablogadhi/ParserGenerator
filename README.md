@@ -1,2 +1,2 @@
-# RegexEvaluator
-First project for the Programming Language Design course.
+# LexerGenerator
+Second project for the Programming Language Design course.
