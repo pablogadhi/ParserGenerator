@@ -1,6 +1,6 @@
 #include "nfa_builder.h"
 
-StateMachine nfa_from_or(StateMachine &a, StateMachine &b, int &last_index)
+NFA nfa_from_or(NFA &a, NFA &b, int &last_index)
 {
     shared_ptr<State> first_state = make_shared<State>(last_index + 1);
     shared_ptr<State> last_state = make_shared<State>(last_index + 2);
@@ -12,10 +12,10 @@ StateMachine nfa_from_or(StateMachine &a, StateMachine &b, int &last_index)
     last_state->set_as_accepting(true);
     a.end()->set_as_accepting(false);
     b.end()->set_as_accepting(false);
-    return StateMachine(first_state, last_state);
+    return NFA(first_state, last_state);
 }
 
-StateMachine nfa_from_concat(StateMachine &a, StateMachine &b)
+NFA nfa_from_concat(NFA &a, NFA &b)
 {
     for (auto &state : a.flatten())
     {
@@ -30,10 +30,10 @@ StateMachine nfa_from_concat(StateMachine &a, StateMachine &b)
             }
         }
     }
-    return StateMachine(a.start(), b.end());
+    return NFA(a.start(), b.end());
 }
 
-StateMachine nfa_from_kleene(StateMachine &a, int &last_index)
+NFA nfa_from_kleene(NFA &a, int &last_index)
 {
     shared_ptr<State> first_state = make_shared<State>(last_index + 1);
     shared_ptr<State> last_state = make_shared<State>(last_index + 2);
@@ -44,10 +44,10 @@ StateMachine nfa_from_kleene(StateMachine &a, int &last_index)
     last_index += 2;
     last_state->set_as_accepting(true);
     a.end()->set_as_accepting(false);
-    return StateMachine(first_state, last_state);
+    return NFA(first_state, last_state);
 }
 
-StateMachine nfa_from_transition(int transition, int &last_index)
+NFA nfa_from_transition(int transition, int &last_index)
 {
     shared_ptr<State> last_state = make_shared<State>(last_index + 2);
     int first_name = last_index + 1;
@@ -55,5 +55,5 @@ StateMachine nfa_from_transition(int transition, int &last_index)
         make_shared<State>(first_name, vector<pair<int, shared_ptr<State>>>{make_pair(transition, last_state)});
     last_index += 2;
     last_state->set_as_accepting(true);
-    return StateMachine(first_state, last_state);
+    return NFA(first_state, last_state);
 }

@@ -35,8 +35,7 @@ bool is_set_acceptance(Set<State> set, int useless_param)
 }
 
 template <class T, class F, class G>
-StateMachine machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran, F acceptance_check,
-                                      G accept_criteria)
+DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran, F acceptance_check, G accept_criteria)
 {
     Set<State> created_states;
     vector<shared_ptr<State>> state_ptrs;
@@ -67,10 +66,10 @@ StateMachine machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_
         state_ptrs[indices[0]]->add_t_function(make_pair(trans.first.second, state_ptrs[indices[1]]));
     }
 
-    return StateMachine(state_ptrs[0], state_ptrs[state_ptrs.size() - 1]);
+    return DFA(state_ptrs[0], state_ptrs[state_ptrs.size() - 1]);
 }
 
-StateMachine dfa_from_nfa(StateMachine nfa)
+DFA dfa_from_nfa(NFA nfa)
 {
     Set<Set<State>> d_states;
     int name_index = 0;
@@ -268,7 +267,7 @@ bool has_set_sharp_node(Set<int> set, int sharp_pos)
     return false;
 }
 
-StateMachine dfa_from_syntax_tree(TreeNode root)
+DFA dfa_from_syntax_tree(TreeNode root)
 {
     auto root_ptr = make_shared<TreeNode>(root);
 

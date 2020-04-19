@@ -4,7 +4,7 @@
 #include "state_machine.h"
 #include <string>
 
-bool simulate_nfa(string, StateMachine &);
-bool simulate_dfa(string, StateMachine &);
+bool simulate_nfa(string, NFA &);
+bool simulate_dfa(string, DFA &);
 
 #endif

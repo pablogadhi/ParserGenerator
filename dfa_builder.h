@@ -4,7 +4,7 @@
 #include "state_machine.h"
 #include "tree_node.h"
 
-StateMachine dfa_from_nfa(StateMachine);
-StateMachine dfa_from_syntax_tree(TreeNode);
+DFA dfa_from_nfa(NFA);
+DFA dfa_from_syntax_tree(TreeNode);
 
 #endif

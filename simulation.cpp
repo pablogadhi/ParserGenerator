@@ -1,35 +1,29 @@
 #include "simulation.h"
 
-bool simulate_nfa(string str, StateMachine &nfa)
+bool simulate_nfa(string str, NFA &nfa)
 {
-    auto S = e_closure(Set<State>(vector<State>{*nfa.start()}));
+    nfa.reset_movements();
     for (auto &c : str)
     {
-        S = e_closure(move_set_of_states(S, (int)c));
+        nfa.move(c);
     }
-    if (intersec_between_sets<State>(S, nfa.accepting_states()).size() != 0)
+
+    if (intersec_between_sets<State>(nfa.current(), nfa.accepting_states()).size() != 0)
     {
         return true;
     }
     return false;
 }
 
-bool simulate_dfa(string str, StateMachine &dfa)
+bool simulate_dfa(string str, DFA &dfa)
 {
-    auto current_state = *dfa.start();
+    dfa.reset_movements();
     for (auto &c : str)
     {
-        auto movement = current_state.move((int)c);
-        if (movement.size() != 1)
-        {
-            return false;
-        }
-        else
-        {
-            current_state = movement[0];
-        }
+        dfa.move(c);
     }
-    if (current_state.is_accepting())
+
+    if (dfa.current().is_accepting())
     {
         return true;
     }

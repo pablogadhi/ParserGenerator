@@ -1,7 +1,6 @@
 #ifndef SET_H
 #define SET_H
 
-#include "utils.h"
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -125,7 +124,6 @@ template <class T> class Set
 
     int has_item(T &item)
     {
-        // return is_item_in_vector(item, items);
         if (items.size() == 0)
         {
             return -1;

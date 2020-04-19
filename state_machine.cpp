@@ -1,4 +1,5 @@
 #include "state_machine.h"
+#include "utils.h"
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -9,37 +10,39 @@ extern "C"
 #include <graphviz/gvc.h>
 }
 
-StateMachine::StateMachine(shared_ptr<State> starting_state, shared_ptr<State> ending_state)
+template <class MachineType>
+StateMachine<MachineType>::StateMachine(shared_ptr<State> starting_state, shared_ptr<State> ending_state)
     : starting_state(starting_state), ending_state(ending_state)
 {
 }
 
-StateMachine::StateMachine()
+template <class MachineType> StateMachine<MachineType>::StateMachine()
 {
 }
 
-StateMachine::~StateMachine()
+template <class MachineType> StateMachine<MachineType>::~StateMachine()
 {
 }
 
-shared_ptr<State> StateMachine::start()
+template <class MachineType> shared_ptr<State> StateMachine<MachineType>::start()
 {
     return starting_state;
 }
 
-shared_ptr<State> StateMachine::end()
+template <class MachineType> shared_ptr<State> StateMachine<MachineType>::end()
 {
     return ending_state;
 }
 
-vector<shared_ptr<State>> StateMachine::flatten()
+template <class MachineType> vector<shared_ptr<State>> StateMachine<MachineType>::flatten()
 {
     vector<shared_ptr<State>> all_states = vector<shared_ptr<State>>();
     get_next_states_into_vector(all_states, starting_state);
     return all_states;
 }
 
-void StateMachine::get_next_states_into_vector(vector<shared_ptr<State>> &vec, shared_ptr<State> state)
+template <class MachineType>
+void StateMachine<MachineType>::get_next_states_into_vector(vector<shared_ptr<State>> &vec, shared_ptr<State> state)
 {
     if (!is_item_ptr_in_vector<shared_ptr<State>>(state, vec))
     {
@@ -51,7 +54,7 @@ void StateMachine::get_next_states_into_vector(vector<shared_ptr<State>> &vec, s
     }
 }
 
-vector<int> StateMachine::get_all_input_symbols()
+template <class MachineType> vector<int> StateMachine<MachineType>::get_all_input_symbols()
 {
     auto all_states = flatten();
     vector<int> symbols;
@@ -68,7 +71,7 @@ vector<int> StateMachine::get_all_input_symbols()
     return symbols;
 }
 
-void StateMachine::print_machine()
+template <class MachineType> void StateMachine<MachineType>::print_machine()
 {
     vector<shared_ptr<State>> flattend_machine = flatten();
     for (auto &state : flattend_machine)
@@ -83,7 +86,7 @@ void StateMachine::print_machine()
     }
 }
 
-void StateMachine::draw_machine(string file_name)
+template <class MachineType> void StateMachine<MachineType>::draw_machine(string file_name)
 {
     Agraph_t *graph = agopen((char *)"StateMachine", Agdirected, 0);
     GVC_t *gvc = gvContext();
@@ -143,7 +146,7 @@ void StateMachine::draw_machine(string file_name)
     system(render_command.c_str());
 }
 
-StateMachine StateMachine::make_copy(int &name_index)
+template <class MachineType> MachineType StateMachine<MachineType>::make_copy(int &name_index)
 {
     vector<shared_ptr<State>> copied_states;
     vector<shared_ptr<State>> original_states = flatten();
@@ -170,10 +173,10 @@ StateMachine StateMachine::make_copy(int &name_index)
         }
     }
 
-    return StateMachine(copied_states[0], copied_states[copied_states.size() - 1]);
+    return MachineType(copied_states[0], copied_states[copied_states.size() - 1]);
 }
 
-Set<State> StateMachine::accepting_states()
+template <class MachineType> Set<State> StateMachine<MachineType>::accepting_states()
 {
     Set<State> set;
     for (auto &state : flatten())
@@ -184,6 +187,70 @@ Set<State> StateMachine::accepting_states()
         }
     }
     return set;
+}
+
+DFA::DFA()
+{
+}
+
+DFA::DFA(shared_ptr<State> start_ptr, shared_ptr<State> end_ptr)
+{
+    starting_state = start_ptr;
+    ending_state = end_ptr;
+    reset_movements();
+}
+
+void DFA::move(char c)
+{
+    auto movement = current_state.move((int)c);
+    if (movement.size() != 1)
+    {
+        // TODO Do Something when the dfa can't move
+        current_state = State();
+        current_state.set_as_accepting(false);
+    }
+    else
+    {
+        current_state = movement[0];
+    }
+}
+
+void DFA::reset_movements()
+{
+    current_state = *starting_state;
+}
+
+State DFA::current()
+{
+    return current_state;
+}
+
+NFA::NFA()
+{
+}
+
+NFA::NFA(shared_ptr<State> start_ptr, shared_ptr<State> end_ptr)
+{
+    starting_state = start_ptr;
+    ending_state = end_ptr;
+    reset_movements();
+}
+
+void NFA::move(char c)
+{
+    auto movement = move_set_of_states(current_states, (int)c);
+    auto e_c = e_closure(movement);
+    current_states = e_c;
+}
+
+void NFA::reset_movements()
+{
+    current_states = e_closure(Set<State>(vector<State>{*starting_state}));
+}
+
+Set<State> NFA::current()
+{
+    return current_states;
 }
 
 Set<State> e_closure(Set<State> set)
