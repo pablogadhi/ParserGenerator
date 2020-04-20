@@ -1,4 +1,6 @@
 #include "dfa_builder.h"
+#include "utils.h"
+#include <iostream>
 #include <memory>
 
 template <class T> Set<Set<T>> get_unmarked_states(Set<Set<T>> set)
@@ -110,7 +112,7 @@ DFA dfa_from_nfa(NFA nfa)
     return machine_from_transitions<State, function<bool(Set<State>, int)>, int>(d_tran, is_set_acceptance, 0);
 }
 
-void nullable(shared_ptr<TreeNode> node)
+void nullable(shared_ptr<TreeNode<int>> node)
 {
     if (node == nullptr)
     {
@@ -131,7 +133,7 @@ void nullable(shared_ptr<TreeNode> node)
         is_nullable = any_cast<bool>(node->left()->get_info()["nullable"]) ||
                       any_cast<bool>(node->right()->get_info()["nullable"]);
         break;
-    case 46:
+    case 0:
         is_nullable = any_cast<bool>(node->left()->get_info()["nullable"]) &&
                       any_cast<bool>(node->right()->get_info()["nullable"]);
         break;
@@ -145,16 +147,17 @@ void nullable(shared_ptr<TreeNode> node)
     node->add_info_entry("nullable", is_nullable);
 }
 
-void first_last_pos(shared_ptr<TreeNode>, string, bool);
+void first_last_pos(shared_ptr<TreeNode<int>>, string, bool);
 
-Set<int> first_last_pos_or(shared_ptr<TreeNode> node_1, shared_ptr<TreeNode> node_2, string info_entry_key, bool last)
+Set<int> first_last_pos_or(shared_ptr<TreeNode<int>> node_1, shared_ptr<TreeNode<int>> node_2, string info_entry_key,
+                           bool last)
 {
 
     return union_between_sets<int>(any_cast<Set<int>>(node_1->get_info()[info_entry_key]),
                                    any_cast<Set<int>>(node_2->get_info()[info_entry_key]));
 }
 
-void first_last_pos(shared_ptr<TreeNode> node, string info_entry_key, bool last)
+void first_last_pos(shared_ptr<TreeNode<int>> node, string info_entry_key, bool last)
 {
     if (node == nullptr)
     {
@@ -164,7 +167,7 @@ void first_last_pos(shared_ptr<TreeNode> node, string info_entry_key, bool last)
     first_last_pos(node->right(), info_entry_key, last);
 
     Set<int> result;
-    shared_ptr<TreeNode> important_child = node->left();
+    shared_ptr<TreeNode<int>> important_child = node->left();
     if (last && node->right() != nullptr)
     {
         important_child = node->right();
@@ -177,7 +180,7 @@ void first_last_pos(shared_ptr<TreeNode> node, string info_entry_key, bool last)
     case 124:
         result = first_last_pos_or(node->left(), node->right(), info_entry_key, last);
         break;
-    case 46:
+    case 0:
         if (any_cast<bool>(important_child->get_info()["nullable"]))
         {
             result = first_last_pos_or(node->left(), node->right(), info_entry_key, last);
@@ -199,7 +202,7 @@ void first_last_pos(shared_ptr<TreeNode> node, string info_entry_key, bool last)
     node->add_info_entry(info_entry_key, result);
 }
 
-void followpos(shared_ptr<TreeNode> node)
+void followpos(shared_ptr<TreeNode<int>> node)
 {
 
     if (node == nullptr)
@@ -209,7 +212,7 @@ void followpos(shared_ptr<TreeNode> node)
     followpos(node->left());
     followpos(node->right());
 
-    if (node->symbol() == 46)
+    if (node->symbol() == 0)
     {
         for (auto &position : any_cast<Set<int>>(node->left()->get_info()["lastpos"]))
         {
@@ -242,9 +245,9 @@ void followpos(shared_ptr<TreeNode> node)
     }
 }
 
-vector<shared_ptr<TreeNode>> get_nodes_with_symbol_in_set(shared_ptr<TreeNode> root, Set<int> set, int symbol)
+vector<shared_ptr<TreeNode<int>>> get_nodes_with_symbol_in_set(shared_ptr<TreeNode<int>> root, Set<int> set, int symbol)
 {
-    vector<shared_ptr<TreeNode>> node_vector;
+    vector<shared_ptr<TreeNode<int>>> node_vector;
     for (auto &node_name : set)
     {
         auto node_ptr = root->find(node_name);
@@ -267,14 +270,39 @@ bool has_set_sharp_node(Set<int> set, int sharp_pos)
     return false;
 }
 
-DFA dfa_from_syntax_tree(TreeNode root)
+DFABuilder::DFABuilder(unordered_map<string, Set<string>> alphabet) : char_map(alphabet)
 {
-    auto root_ptr = make_shared<TreeNode>(root);
+}
+
+DFABuilder::~DFABuilder()
+{
+}
+
+vector<int> DFABuilder::get_all_input_symbols(shared_ptr<TreeNode<int>> root_ptr)
+{
+    vector<int> symbols;
+    for (auto &node : root_ptr->flatten())
+    {
+        auto s = node->symbol();
+        if (char_map["operator"].has_item(string(1, (char)s)) == -1 &&
+            char_map["special"].has_item(string(1, (char)s)) == -1)
+        {
+            symbols.push_back(s);
+        }
+    }
+    return symbols;
+}
+
+DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root)
+{
+    auto root_ptr = make_shared<TreeNode<int>>(root);
 
     nullable(root_ptr);
     first_last_pos(root_ptr, "firstpos", false);
     first_last_pos(root_ptr, "lastpos", true);
     followpos(root_ptr);
+
+    print_info(root_ptr);
 
     Set<Set<int>> d_states;
     int name_index = 0;
@@ -288,12 +316,20 @@ DFA dfa_from_syntax_tree(TreeNode root)
         auto S = unmarked_states[0];
         d_states = mark_state(d_states, S);
 
-        for (auto &a : root_ptr->get_all_input_symbols())
+        for (auto &a : get_all_input_symbols(root_ptr))
         {
             auto U = Set<int>();
             for (auto &node : get_nodes_with_symbol_in_set(root_ptr, S, a))
             {
-                U = union_between_sets(any_cast<Set<int>>(node->get_info()["followpos"]), U);
+                auto node_info = node->get_info();
+                if (node_info.find("followpos") != node_info.end())
+                {
+                    U = union_between_sets(any_cast<Set<int>>(node_info["followpos"]), U);
+                }
+                else
+                {
+                    continue;
+                }
             }
 
             if (U.size() == 0)
@@ -322,4 +358,43 @@ DFA dfa_from_syntax_tree(TreeNode root)
     // root_ptr->print_info();
     auto sharp_pos = root_ptr->right()->name();
     return machine_from_transitions<int, function<bool(Set<int>, int)>, int>(d_tran, has_set_sharp_node, sharp_pos);
+}
+
+void DFABuilder::print_info(shared_ptr<TreeNode<int>> root)
+{
+    for (auto &node : root->flatten())
+    {
+        auto node_info = node->get_info();
+        cout << "Nodo " << node->name() << ":" << endl;
+        cout << "Simbolo " << (int)(node->symbol()) << ":" << endl;
+        cout << "Nullable: " << any_cast<bool>(node_info["nullable"]) << endl;
+
+        auto pos_set = any_cast<Set<int>>(node_info["firstpos"]);
+        string pos_str = "";
+        for (auto &i : pos_set)
+        {
+            pos_str = pos_str + to_string(i) + ",";
+        }
+        cout << "Firstpost: " << pos_str << endl;
+
+        pos_set = any_cast<Set<int>>(node_info["lastpos"]);
+        pos_str = "";
+        for (auto &i : pos_set)
+        {
+            pos_str = pos_str + to_string(i) + ",";
+        }
+        cout << "Lastpos: " << pos_str << endl;
+
+        if (node_info.find("followpos") != node_info.end())
+        {
+            pos_set = any_cast<Set<int>>(node->get_info()["followpos"]);
+            pos_str = "";
+            for (auto &i : pos_set)
+            {
+                pos_str = pos_str + to_string(i) + ",";
+            }
+            cout << "Followpos: " << pos_str << endl;
+        }
+        cout << endl;
+    }
 }

@@ -31,6 +31,14 @@ class Token
     void add_char(char);
     bool empty();
     token_type type();
+    bool operator==(Token &t)
+    {
+        return t_val.compare(t.value()) == 0;
+    }
+    bool operator<(Token &t)
+    {
+        return t_val.compare(t.value()) > 0;
+    }
 };
 
 class Scanner
@@ -47,7 +55,7 @@ class Scanner
     Token n_token;
     vector<Token> token_list;
     DFA finder = DFA();
-    unordered_map<string, Set<char>> char_map;
+    unordered_map<string, Set<string>> char_map;
 
     void read_into_string_buffer(string &);
 
@@ -56,11 +64,13 @@ class Scanner
     Scanner(string);
     ~Scanner();
 
+    void set_finder(DFA);
     Token scan();
     void next_char();
     Token next_token();
     Token current();
     Token look_ahead();
+    unordered_map<string, Set<string>> get_char_map();
 };
 
 #endif

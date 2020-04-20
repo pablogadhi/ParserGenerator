@@ -122,7 +122,7 @@ template <class T> class Set
         return false;
     }
 
-    int has_item(T &item)
+    int has_item(T item)
     {
         if (items.size() == 0)
         {
@@ -144,20 +144,26 @@ template <class T> class Set
 
 template <class T> Set<T> union_between_sets(Set<T> set_a, Set<T> set_b)
 {
-    vector<T> output;
-    std::set_union(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
+    vector<T> output, items_a = set_a.get_items(), items_b = set_b.get_items();
+    sort(items_a.begin(), items_a.end());
+    sort(items_b.begin(), items_b.end());
+    std::set_union(items_a.begin(), items_a.end(), items_b.begin(), items_b.end(), back_inserter(output));
     return Set<T>(output);
 }
 template <class T> Set<T> intersec_between_sets(Set<T> set_a, Set<T> set_b)
 {
-    vector<T> output;
-    std::set_intersection(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
+    vector<T> output, items_a = set_a.get_items(), items_b = set_b.get_items();
+    sort(items_a.begin(), items_a.end());
+    sort(items_b.begin(), items_b.end());
+    std::set_intersection(items_a.begin(), items_a.end(), items_b.begin(), items_b.end(), back_inserter(output));
     return Set<T>(output);
 }
 template <class T> Set<T> diff_between_sets(Set<T> set_a, Set<T> set_b)
 {
-    vector<T> output;
-    std::set_difference(set_a.begin(), set_a.end(), set_b.begin(), set_b.end(), back_inserter(output));
+    vector<T> output, items_a = set_a.get_items(), items_b = set_b.get_items();
+    sort(items_a.begin(), items_a.end());
+    sort(items_b.begin(), items_b.end());
+    std::set_difference(items_a.begin(), items_a.end(), items_b.begin(), items_b.end(), back_inserter(output));
     return Set<T>(output);
 }
 

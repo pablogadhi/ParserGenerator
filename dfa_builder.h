@@ -5,6 +5,18 @@
 #include "tree_node.h"
 
 DFA dfa_from_nfa(NFA);
-DFA dfa_from_syntax_tree(TreeNode);
+
+class DFABuilder
+{
+  private:
+    unordered_map<string, Set<string>> char_map;
+
+  public:
+    DFABuilder(unordered_map<string, Set<string>>);
+    ~DFABuilder();
+    vector<int> get_all_input_symbols(shared_ptr<TreeNode<int>>);
+    DFA dfa_from_syntax_tree(TreeNode<int>);
+    void print_info(shared_ptr<TreeNode<int>>);
+};
 
 #endif

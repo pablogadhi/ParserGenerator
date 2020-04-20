@@ -10,12 +10,13 @@ class Parser
     Scanner &scanner;
     Token c_token;
     Token la_token;
-    TreeNode syntax_tree_head;
+    TreeNode<int> syntax_tree_head;
 
   public:
     Parser(Scanner &);
     ~Parser();
     void parse();
+    void write_scanner();
 };
 
 #endif

@@ -1,74 +1,75 @@
 #include "tree_node.h"
-#include "utils.h"
 #include <iostream>
 
-TreeNode::TreeNode()
+template <class T> TreeNode<T>::TreeNode()
 {
 }
 
-TreeNode::TreeNode(int name, int symbol) : node_name(name), node_symbol(symbol)
+template <class T> TreeNode<T>::TreeNode(int name, T symbol) : node_name(name), node_symbol(symbol)
 {
 }
 
-TreeNode::TreeNode(int name, int symbol, shared_ptr<TreeNode> left_ptr)
+template <class T>
+TreeNode<T>::TreeNode(int name, T symbol, shared_ptr<TreeNode<T>> left_ptr)
     : node_name(name), node_symbol(symbol), left_child(left_ptr)
 {
 }
 
-TreeNode::TreeNode(int name, int symbol, shared_ptr<TreeNode> left_ptr, shared_ptr<TreeNode> right_ptr)
+template <class T>
+TreeNode<T>::TreeNode(int name, T symbol, shared_ptr<TreeNode<T>> left_ptr, shared_ptr<TreeNode<T>> right_ptr)
     : node_name(name), node_symbol(symbol), left_child(left_ptr), right_child(right_ptr)
 {
 }
 
-shared_ptr<TreeNode> TreeNode::left()
+template <class T> shared_ptr<TreeNode<T>> TreeNode<T>::left()
 {
     return left_child;
 }
 
-shared_ptr<TreeNode> TreeNode::right()
+template <class T> shared_ptr<TreeNode<T>> TreeNode<T>::right()
 {
     return right_child;
 }
 
-void TreeNode::set_left(shared_ptr<TreeNode> node_ptr)
+template <class T> void TreeNode<T>::set_left(shared_ptr<TreeNode<T>> node_ptr)
 {
     left_child = node_ptr;
 }
 
-void TreeNode::set_right(shared_ptr<TreeNode> node_ptr)
+template <class T> void TreeNode<T>::set_right(shared_ptr<TreeNode<T>> node_ptr)
 {
     right_child = node_ptr;
 }
 
-map<string, any> TreeNode::get_info()
+template <class T> map<string, any> TreeNode<T>::get_info()
 {
     return info;
 }
 
-void TreeNode::add_info_entry(string key, any value)
+template <class T> void TreeNode<T>::add_info_entry(string key, any value)
 {
     info[key] = value;
 }
 
-int TreeNode::symbol()
+template <class T> T TreeNode<T>::symbol()
 {
     return node_symbol;
 }
 
-int TreeNode::name()
+template <class T> int TreeNode<T>::name()
 {
     return node_name;
 }
 
-vector<shared_ptr<TreeNode>> TreeNode::flatten()
+template <class T> vector<shared_ptr<TreeNode<T>>> TreeNode<T>::flatten()
 {
-    vector<shared_ptr<TreeNode>> result;
-    result.push_back(make_shared<TreeNode>(*this));
+    vector<shared_ptr<TreeNode<T>>> result;
+    result.push_back(make_shared<TreeNode<T>>(*this));
     get_children_and_beyond_into_vec(result);
     return result;
 }
 
-void TreeNode::get_children_and_beyond_into_vec(vector<shared_ptr<TreeNode>> &vec)
+template <class T> void TreeNode<T>::get_children_and_beyond_into_vec(vector<shared_ptr<TreeNode<T>>> &vec)
 {
     if (left_child != nullptr)
     {
@@ -83,7 +84,7 @@ void TreeNode::get_children_and_beyond_into_vec(vector<shared_ptr<TreeNode>> &ve
     }
 }
 
-shared_ptr<TreeNode> TreeNode::find(int name)
+template <class T> shared_ptr<TreeNode<T>> TreeNode<T>::find(int name)
 {
     for (auto &node : flatten())
     {
@@ -93,58 +94,4 @@ shared_ptr<TreeNode> TreeNode::find(int name)
         }
     }
     return nullptr;
-}
-
-vector<int> TreeNode::get_all_input_symbols()
-{
-    vector<int> symbols;
-    for (auto &node : flatten())
-    {
-        auto s = node->symbol();
-        // TODO Define is_in_alphabet() function
-        if (!is_item_in_vector(s, symbols) && (isalnum((char)s)))
-        {
-            symbols.push_back(s);
-        }
-    }
-    return symbols;
-}
-
-void TreeNode::print_info()
-{
-    for (auto &node : flatten())
-    {
-        auto node_info = node->get_info();
-        cout << "Nodo " << node->name() << ":" << endl;
-        cout << "Simbolo " << (char)(node->symbol()) << ":" << endl;
-        cout << "Nullable: " << any_cast<bool>(node_info["nullable"]) << endl;
-
-        auto pos_set = any_cast<Set<int>>(node_info["firstpos"]);
-        string pos_str = "";
-        for (auto &i : pos_set)
-        {
-            pos_str = pos_str + to_string(i) + ",";
-        }
-        cout << "Firstpost: " << pos_str << endl;
-
-        pos_set = any_cast<Set<int>>(node_info["lastpos"]);
-        pos_str = "";
-        for (auto &i : pos_set)
-        {
-            pos_str = pos_str + to_string(i) + ",";
-        }
-        cout << "Lastpos: " << pos_str << endl;
-
-        if (node_info.find("followpos") != node_info.end())
-        {
-            pos_set = any_cast<Set<int>>(node->get_info()["followpos"]);
-            pos_str = "";
-            for (auto &i : pos_set)
-            {
-                pos_str = pos_str + to_string(i) + ",";
-            }
-            cout << "Followpos: " << pos_str << endl;
-        }
-        cout << endl;
-    }
 }

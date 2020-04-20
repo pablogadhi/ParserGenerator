@@ -9,33 +9,34 @@
 
 using namespace std;
 
-class TreeNode
+template <class T> class TreeNode
 {
   private:
-    int node_symbol = 36;
+    T node_symbol;
     int node_name = -1;
-    shared_ptr<TreeNode> left_child = nullptr;
-    shared_ptr<TreeNode> right_child = nullptr;
+    shared_ptr<TreeNode<T>> left_child = nullptr;
+    shared_ptr<TreeNode<T>> right_child = nullptr;
     map<string, any> info;
 
   public:
-    TreeNode();
-    TreeNode(int, int);
-    TreeNode(int, int, shared_ptr<TreeNode>);
-    TreeNode(int, int, shared_ptr<TreeNode>, shared_ptr<TreeNode>);
-    shared_ptr<TreeNode> left();
-    shared_ptr<TreeNode> right();
-    void set_left(shared_ptr<TreeNode>);
-    void set_right(shared_ptr<TreeNode>);
+    TreeNode<T>();
+    TreeNode<T>(int, T);
+    TreeNode<T>(int, T, shared_ptr<TreeNode<T>>);
+    TreeNode<T>(int, T, shared_ptr<TreeNode<T>>, shared_ptr<TreeNode<T>>);
+    shared_ptr<TreeNode<T>> left();
+    shared_ptr<TreeNode<T>> right();
+    void set_left(shared_ptr<TreeNode<T>>);
+    void set_right(shared_ptr<TreeNode<T>>);
     map<string, any> get_info();
     void add_info_entry(string, any);
-    int symbol();
+    T symbol();
     int name();
-    vector<shared_ptr<TreeNode>> flatten();
-    void get_children_and_beyond_into_vec(vector<shared_ptr<TreeNode>> &);
-    shared_ptr<TreeNode> find(int);
-    vector<int> get_all_input_symbols();
-    void print_info();
+    vector<shared_ptr<TreeNode<T>>> flatten();
+    void get_children_and_beyond_into_vec(vector<shared_ptr<TreeNode<T>>> &);
+    shared_ptr<TreeNode<T>> find(int);
 };
+
+template class TreeNode<int>;
+template class TreeNode<Set<string>>;
 
 #endif
