@@ -49,6 +49,16 @@ bool State::is_accepting()
     return s_is_accepting;
 }
 
+void State::set_reference_name(string name)
+{
+    s_ref_name = name;
+}
+
+string State::reference_name()
+{
+    return s_ref_name;
+}
+
 Set<State> State::next_e_states()
 {
     Set<State> e_states;

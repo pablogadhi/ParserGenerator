@@ -51,9 +51,8 @@ Scanner::Scanner(string file_name)
     }
 
     // Initialize Character Map
-
-    char_map["operator"] = Set<char>(vector<char>{'|', '*', '+', '?', '\0'});
-    char_map["special"] = Set<char>(vector<char>{'(', ')'});
+    char_map["operator"] = Set<char>(vector<char>{'|', '*', '+', '?', '\0', '-', '=', '.'});
+    char_map["special"] = Set<char>(vector<char>{'(', ')', '{', '}'});
     char_map["="] = Set<char>(vector<char>{'='});
     char_map["-"] = Set<char>(vector<char>{'-'});
     char_map["."] = Set<char>(vector<char>{'.'});
@@ -101,6 +100,14 @@ Scanner::Scanner(string file_name)
     printable = diff_between_sets(printable, char_map["operator"]);
     printable = diff_between_sets(printable, char_map["special"]);
     char_map["printable"] = printable;
+
+    // Initialize keywords
+    keywords["COMPILER"] = "COMPILER";
+    keywords["CHARACTERS"] = "CHARACTERS";
+    keywords["KEYWORDS"] = "KEYWORDS";
+    keywords["TOKENS"] = "TOKENS";
+    keywords["END"] = "END";
+    keywords["ANY"] = "ANY";
 
     read_into_string_buffer(buffer_0);
     current_buffer = buffer_0;
@@ -225,6 +232,16 @@ Token Scanner::next_token()
         lexeme_str = current_buffer.substr(lexeme_begin_idx, l_len);
     }
 
+    string token_name;
+    if (keywords.find(lexeme_str) != keywords.end())
+    {
+        token_name = keywords[lexeme_str];
+    }
+    else
+    {
+        token_name = finder.current().reference_name();
+    }
+
     finder.reset_movements();
-    return Token("", lexeme_str);
+    return Token(token_name, lexeme_str);
 }

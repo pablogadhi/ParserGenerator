@@ -16,7 +16,7 @@ class DFABuilder
     ~DFABuilder();
     vector<int> get_all_input_symbols(shared_ptr<TreeNode<int>>);
     DFA dfa_from_nfa(NFA, int &);
-    DFA dfa_from_syntax_tree(TreeNode<int>, int &);
+    DFA dfa_from_syntax_tree(TreeNode<int>, int &, string);
     void print_info(shared_ptr<TreeNode<int>>);
 };
 

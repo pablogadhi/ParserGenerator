@@ -217,7 +217,7 @@ TreeNode<int> expand_tree(shared_ptr<TreeNode<Set<char>>> root, int &name_index)
     return new_tree;
 }
 
-DFA generate_dfa_finder(vector<vector<Set<char>>> all_regex, unordered_map<string, Set<char>> &char_map)
+DFA generate_dfa_finder(vector<pair<string, vector<Set<char>>>> all_regex, unordered_map<string, Set<char>> &char_map)
 {
     vector<DFA> regex_dfa;
     auto builder = DFABuilder(char_map);
@@ -227,12 +227,12 @@ DFA generate_dfa_finder(vector<vector<Set<char>>> all_regex, unordered_map<strin
     int dfa_idx = 0;
     for (auto &regex : all_regex)
     {
-        regex.push_back(hashtag);
+        regex.second.push_back(hashtag);
 
-        auto formated_regex = format_regex(regex, char_map["operator"]);
+        auto formated_regex = format_regex(regex.second, char_map["operator"]);
         auto postfix_regex = infix_to_postfix(formated_regex, char_map, get_precedence);
         auto syntax_tree = postfix_eval(postfix_regex, char_map["operator"]);
-        auto dfa = builder.dfa_from_syntax_tree(syntax_tree, state_name);
+        auto dfa = builder.dfa_from_syntax_tree(syntax_tree, state_name, regex.first);
         string d_name = "DFA_" + to_string(dfa_idx);
         // dfa.draw_machine(d_name);
         dfa_idx++;
@@ -260,6 +260,7 @@ DFA generate_dfa_finder(vector<vector<Set<char>>> all_regex, unordered_map<strin
         state_name++;
         auto state = State(state_name);
         state.set_as_accepting(true);
+        state.set_reference_name(string(1, op));
         // TODO Handle multiple character operators
         final_dfa.start()->add_t_function(make_pair((int)op, make_shared<State>(state)));
     }
@@ -298,19 +299,13 @@ Parser::Parser(Scanner &sc) : scanner(sc)
 
     // TODO make ident accept digits
     auto ident = vector<Set<char>>{char_map["letter"], kleene};
-    auto equal = vector<Set<char>>{char_map["="]};
-    auto dot = vector<Set<char>>{char_map["."]};
-    auto minus = vector<Set<char>>{char_map["-"]};
-    auto l_corchet = vector<Set<char>>{char_map["{"]};
-    auto r_corchet = vector<Set<char>>{char_map["}"]};
-
     auto string_regex = vector<Set<char>>{char_map["\""],        left_p,  stringCh, or_op,         char_map["\\"],
                                           char_map["printable"], right_p, kleene,   char_map["\""]};
     auto char_regex = vector<Set<char>>{char_map["\'"],        left_p,          charCh, or_op,   char_map["\\"],
                                         char_map["printable"], char_map["hex"], kleene, right_p, char_map["\'"]};
 
-    auto all_regex =
-        vector<vector<Set<char>>>{ident, equal, string_regex, char_regex, dot, minus, l_corchet, r_corchet};
+    auto all_regex = vector<pair<string, vector<Set<char>>>>{
+        make_pair("ident", ident), make_pair("string", string_regex), make_pair("char", char_regex)};
 
     auto finder = generate_dfa_finder(all_regex, char_map);
     // finder.print_machine();
@@ -329,7 +324,7 @@ void Parser::parse()
     while (la_token.name() != "EOF")
     {
         c_token = la_token;
-        cout << c_token.value() << endl;
+        cout << "(" << c_token.name() << ", " << c_token.value() << ")" << endl;
         la_token = scanner.scan();
     }
     cout << "<" << la_token.name() << ">" << endl;

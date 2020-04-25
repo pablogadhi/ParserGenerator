@@ -24,20 +24,10 @@ template <class T> Set<Set<T>> mark_state(Set<Set<T>> set, Set<T> state_to_mark)
     return set_with_marked_state;
 }
 
-bool is_set_acceptance(Set<State> set, int useless_param)
-{
-    for (auto &state : set)
-    {
-        if (state.is_accepting())
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-template <class T, class F, class G>
-DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran, F acceptance_check, G accept_criteria)
+template <class T>
+DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran,
+                             function<int(Set<T>, int)> acceptance_check, int accept_criteria,
+                             function<string(Set<T>, int)> ref_func)
 {
     Set<State> created_states;
     vector<shared_ptr<State>> state_ptrs;
@@ -49,11 +39,13 @@ DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran, F a
         {
             auto new_state = State(states_in_tran[i].get_name());
             auto item_index = created_states.has_item(new_state);
+            auto a_index = -1;
             if (item_index == -1)
             {
-                if (acceptance_check(states_in_tran[i], accept_criteria))
+                if ((a_index = acceptance_check(states_in_tran[i], accept_criteria)) != -1)
                 {
                     new_state.set_as_accepting(true);
+                    new_state.set_reference_name(ref_func(states_in_tran[i], a_index));
                 }
                 created_states.add(new_state);
                 indices[i] = created_states.size() - 1;
@@ -69,6 +61,31 @@ DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran, F a
     }
 
     return DFA(state_ptrs[0], state_ptrs[state_ptrs.size() - 1]);
+}
+
+DFABuilder::DFABuilder(unordered_map<string, Set<char>> alphabet) : char_map(alphabet)
+{
+}
+
+DFABuilder::~DFABuilder()
+{
+}
+
+int is_set_acceptance(Set<State> set, int useless_param)
+{
+    for (int i = 0; i < set.size(); i++)
+    {
+        if (set.get_items()[i].is_accepting())
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+string get_ref_name_from_set(Set<State> set, int accept_index)
+{
+    return set.get_items()[accept_index].reference_name();
 }
 
 DFA DFABuilder::dfa_from_nfa(NFA nfa, int &name_index)
@@ -108,7 +125,7 @@ DFA DFABuilder::dfa_from_nfa(NFA nfa, int &name_index)
         unmarked_states = get_unmarked_states<State>(d_states);
     }
 
-    return machine_from_transitions<State, function<bool(Set<State>, int)>, int>(d_tran, is_set_acceptance, 0);
+    return machine_from_transitions<State>(d_tran, is_set_acceptance, 0, get_ref_name_from_set);
 }
 
 void nullable(shared_ptr<TreeNode<int>> node)
@@ -259,40 +276,12 @@ vector<shared_ptr<TreeNode<int>>> get_nodes_with_symbol_in_set(shared_ptr<TreeNo
     return node_vector;
 }
 
-bool has_set_sharp_node(Set<int> set, int sharp_pos)
+int has_set_sharp_node(Set<int> set, int sharp_pos)
 {
-    auto index = set.has_item(sharp_pos);
-    if (index != -1)
-    {
-        return true;
-    }
-    return false;
+    return set.has_item(sharp_pos);
 }
 
-DFABuilder::DFABuilder(unordered_map<string, Set<char>> alphabet) : char_map(alphabet)
-{
-}
-
-DFABuilder::~DFABuilder()
-{
-}
-
-vector<int> DFABuilder::get_all_input_symbols(shared_ptr<TreeNode<int>> root_ptr)
-{
-    vector<int> symbols;
-    for (auto &node : root_ptr->flatten())
-    {
-        auto c = node->symbol();
-        if (char_map["operator"].has_item(c) == -1 && char_map["special"].has_item(c) == -1 &&
-            !is_item_in_vector(c, symbols))
-        {
-            symbols.push_back(c);
-        }
-    }
-    return symbols;
-}
-
-DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root, int &name_index)
+DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root, int &name_index, string ref_name = "")
 {
     auto root_ptr = make_shared<TreeNode<int>>(root);
 
@@ -354,7 +343,23 @@ DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root, int &name_index)
     }
 
     auto sharp_pos = root_ptr->right()->name();
-    return machine_from_transitions<int, function<bool(Set<int>, int)>, int>(d_tran, has_set_sharp_node, sharp_pos);
+    function<string(Set<int>, int)> ref_func = [=](auto a, auto b) { return ref_name; };
+    return machine_from_transitions<int>(d_tran, has_set_sharp_node, sharp_pos, ref_func);
+}
+
+vector<int> DFABuilder::get_all_input_symbols(shared_ptr<TreeNode<int>> root_ptr)
+{
+    vector<int> symbols;
+    for (auto &node : root_ptr->flatten())
+    {
+        auto c = node->symbol();
+        if (char_map["operator"].has_item(c) == -1 && char_map["special"].has_item(c) == -1 &&
+            !is_item_in_vector(c, symbols))
+        {
+            symbols.push_back(c);
+        }
+    }
+    return symbols;
 }
 
 void DFABuilder::print_info(shared_ptr<TreeNode<int>> root)

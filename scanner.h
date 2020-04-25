@@ -58,6 +58,7 @@ class Scanner
     vector<Token> token_list;
     DFA finder = DFA();
     unordered_map<string, Set<char>> char_map;
+    unordered_map<string, string> keywords;
 
     void read_into_string_buffer(string &);
 

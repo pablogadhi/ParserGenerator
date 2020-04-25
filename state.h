@@ -14,6 +14,7 @@ class State
     vector<pair<int, shared_ptr<State>>> t_functions;
     int s_name = -1;
     bool s_is_accepting = false;
+    string s_ref_name; // Name of the parent StateMachine
 
   public:
     State(int, vector<pair<int, shared_ptr<State>>>);
@@ -26,6 +27,8 @@ class State
     int name() const;
     void set_as_accepting(bool);
     bool is_accepting();
+    void set_reference_name(string);
+    string reference_name();
     Set<State> next_e_states();
     Set<State> move(int);
     bool operator==(const State &s)
