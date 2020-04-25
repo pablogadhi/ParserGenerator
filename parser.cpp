@@ -3,53 +3,52 @@
 #include <iostream>
 #include <stack>
 
-int get_precedence(string c)
+int get_precedence(char c)
 {
-    if (c == "|")
+    if (c == '|')
     {
         return 1;
     }
-    if (c == "\0")
+    if (c == '\0')
     {
         return 2;
     }
-    else if (c == "*" || c == "+" || c == "?")
+    else if (c == '*' || c == '+' || c == '?')
     {
         return 3;
     }
     return 0;
 }
 
-vector<Set<string>> infix_to_postfix(vector<Set<string>> infix_regex, unordered_map<string, Set<string>> language_map,
-                                     function<int(string)> get_precedence)
+vector<Set<char>> infix_to_postfix(vector<Set<char>> infix_regex, unordered_map<string, Set<char>> language_map,
+                                   function<int(char)> get_precedence)
 {
-    stack<Set<string>> char_stack;
-    vector<Set<string>> output;
+    stack<Set<char>> char_stack;
+    vector<Set<char>> output;
 
     auto operators = language_map["operator"];
     auto special_symbols = language_map["special"];
 
     for (auto &t : infix_regex)
     {
-        if (intersec_between_sets<string>(t, operators).size() == 0 &&
-            intersec_between_sets<string>(t, special_symbols).size() == 0)
+        if (intersec_between_sets(t, operators).size() == 0 && intersec_between_sets(t, special_symbols).size() == 0)
         {
             output.push_back(t);
         }
-        else if (t.has_item("(") != -1)
+        else if (t.has_item('(') != -1)
         {
             char_stack.push(t);
         }
-        else if (t.has_item(")") != -1)
+        else if (t.has_item(')') != -1)
         {
-            while (char_stack.top().has_item("("))
+            while (char_stack.top().has_item('('))
             {
                 output.push_back(char_stack.top());
                 char_stack.pop();
             }
             char_stack.pop();
         }
-        else if (intersec_between_sets<string>(t, operators).size() != 0)
+        else if (intersec_between_sets(t, operators).size() != 0)
         {
             while (!char_stack.empty() &&
                    get_precedence(t.get_items()[0]) <= get_precedence(char_stack.top().get_items()[0]))
@@ -71,10 +70,10 @@ vector<Set<string>> infix_to_postfix(vector<Set<string>> infix_regex, unordered_
     return output;
 }
 
-TreeNode<int> make_syntax_tree(Set<string> symbol_as_set, int &name_index, vector<TreeNode<int>> children)
+TreeNode<int> make_syntax_tree(Set<char> symbol_as_set, int &name_index, vector<TreeNode<int>> children)
 {
     // TODO Handle symbols with more than one character
-    int symbol = (int)(symbol_as_set.get_items()[0].c_str()[0]);
+    int symbol = (int)(symbol_as_set.get_items()[0]);
     if (children.size() == 1)
     {
         return TreeNode<int>(-1, symbol, make_shared<TreeNode<int>>(children[0]));
@@ -82,47 +81,29 @@ TreeNode<int> make_syntax_tree(Set<string> symbol_as_set, int &name_index, vecto
     return TreeNode<int>(-1, symbol, make_shared<TreeNode<int>>(children[0]), make_shared<TreeNode<int>>(children[1]));
 }
 
-TreeNode<int> tree_from_set(Set<string> set, int &name_index)
+TreeNode<int> tree_from_set(Set<char> set, int &name_index)
 {
-    stack<TreeNode<int>> str_stack, char_stack;
-    for (auto &s : set)
+    stack<TreeNode<int>> char_stack;
+    for (auto &c : set)
     {
-        for (auto &c : s)
+        auto right = TreeNode<int>(name_index, (int)c);
+        name_index++;
+        if (char_stack.empty())
         {
-            auto right = TreeNode<int>(name_index, (int)c);
-            name_index++;
-            if (char_stack.empty())
-            {
-                char_stack.push(right);
-            }
-            else
-            {
-                auto left = char_stack.top();
-                char_stack.pop();
-                char_stack.push(
-                    TreeNode<int>(-1, 0, make_shared<TreeNode<int>>(left), make_shared<TreeNode<int>>(right)));
-            }
-        }
-        auto right_str_node = char_stack.top();
-        char_stack.pop();
-        if (str_stack.empty())
-        {
-            str_stack.push(right_str_node);
+            char_stack.push(right);
         }
         else
         {
-            auto left_str_node = str_stack.top();
-            str_stack.pop();
-            str_stack.push(TreeNode<int>(-1, 124, make_shared<TreeNode<int>>(left_str_node),
-                                         make_shared<TreeNode<int>>(right_str_node)));
+            auto left = char_stack.top();
+            char_stack.pop();
+            char_stack.push(
+                TreeNode<int>(-1, 124, make_shared<TreeNode<int>>(left), make_shared<TreeNode<int>>(right)));
         }
     }
-    auto last = str_stack.top();
-    auto kleene_node = TreeNode<int>(-1, 42, make_shared<TreeNode<int>>(last));
-    return kleene_node;
+    return char_stack.top();
 }
 
-TreeNode<int> basic_syntax_node_generator(Set<string> symbol, int &name)
+TreeNode<int> basic_syntax_node_generator(Set<char> symbol, int &name)
 {
     // auto node = TreeNode<Set<string>>(name, symbol);
     TreeNode<int> node;
@@ -133,29 +114,29 @@ TreeNode<int> basic_syntax_node_generator(Set<string> symbol, int &name)
     else
     {
         // TODO Handle symbols with more than one character
-        node = TreeNode<int>(name, (int)(symbol.get_items()[0].c_str()[0]));
+        node = TreeNode<int>(name, (int)(symbol.get_items()[0]));
         name++;
     }
     return node;
 }
 
-bool is_operator_binary(Set<string> op)
+bool is_operator_binary(Set<char> op)
 {
-    if (op.get_items()[0] == "|" || op.get_items()[0] == "\0")
+    if (op.get_items()[0] == '|' || op.get_items()[0] == '\0')
     {
         return true;
     }
     return false;
 }
 
-TreeNode<int> postfix_eval(vector<Set<string>> postfix_expr, Set<string> operators)
+TreeNode<int> postfix_eval(vector<Set<char>> postfix_expr, Set<char> operators)
 {
     stack<TreeNode<int>> m_stack;
     int state_index = 0;
     for (auto &t : postfix_expr)
     {
         TreeNode<int> a, b;
-        if (intersec_between_sets<string>(t, operators).size() != 0)
+        if (intersec_between_sets(t, operators).size() != 0)
         {
             a = m_stack.top();
             m_stack.pop();
@@ -188,24 +169,24 @@ TreeNode<int> postfix_eval(vector<Set<string>> postfix_expr, Set<string> operato
     return m_stack.top();
 }
 
-vector<Set<string>> format_regex(vector<Set<string>> regex, Set<string> operators)
+vector<Set<char>> format_regex(vector<Set<char>> regex, Set<char> operators)
 {
-    vector<Set<string>> result;
+    vector<Set<char>> result;
     for (int i = 0; i < regex.size() - 1; i++)
     {
-        Set<string> first = regex[i], second = regex[i + 1];
+        Set<char> first = regex[i], second = regex[i + 1];
         result.push_back(first);
-        if (first.has_item("(") == -1 && second.has_item(")") == -1 &&
+        if (first.has_item('(') == -1 && second.has_item(')') == -1 &&
             intersec_between_sets(operators, second).size() == 0 && !is_operator_binary(first))
         {
-            result.push_back(Set<string>(vector<string>{"\0"}));
+            result.push_back(Set<char>(vector<char>{'\0'}));
         }
     }
     result.push_back(regex[regex.size() - 1]);
     return result;
 }
 
-TreeNode<int> expand_tree(shared_ptr<TreeNode<Set<string>>> root, int &name_index)
+TreeNode<int> expand_tree(shared_ptr<TreeNode<Set<char>>> root, int &name_index)
 {
     shared_ptr<TreeNode<int>> left_child, right_child;
     if (root->left() != nullptr)
@@ -228,7 +209,7 @@ TreeNode<int> expand_tree(shared_ptr<TreeNode<Set<string>>> root, int &name_inde
     else
     {
         // TODO Handle symbols with more than one character
-        new_tree = TreeNode<int>(name_index, (int)(root->symbol()[0].c_str()[0]));
+        new_tree = TreeNode<int>(name_index, (int)(root->symbol()[0]));
         name_index++;
         new_tree.set_left(left_child);
         new_tree.set_right(right_child);
@@ -236,34 +217,106 @@ TreeNode<int> expand_tree(shared_ptr<TreeNode<Set<string>>> root, int &name_inde
     return new_tree;
 }
 
+DFA generate_dfa_finder(vector<vector<Set<char>>> all_regex, unordered_map<string, Set<char>> &char_map)
+{
+    vector<DFA> regex_dfa;
+    auto builder = DFABuilder(char_map);
+    auto hashtag = Set<char>(vector<char>{'#'});
+
+    int state_name = 0;
+    int dfa_idx = 0;
+    for (auto &regex : all_regex)
+    {
+        regex.push_back(hashtag);
+
+        auto formated_regex = format_regex(regex, char_map["operator"]);
+        auto postfix_regex = infix_to_postfix(formated_regex, char_map, get_precedence);
+        auto syntax_tree = postfix_eval(postfix_regex, char_map["operator"]);
+        auto dfa = builder.dfa_from_syntax_tree(syntax_tree, state_name);
+        string d_name = "DFA_" + to_string(dfa_idx);
+        // dfa.draw_machine(d_name);
+        dfa_idx++;
+        regex_dfa.push_back(dfa);
+        // The name doesn't get updated on the last creation of a state,
+        // that's why it's updated here. All the state names in every dfa must
+        // be unique in order to avoid conflicts when creating a nfa from those DFAs.
+        state_name++;
+    }
+
+    shared_ptr<State> first_state = make_shared<State>(state_name);
+    state_name++;
+    for (auto &dfa : regex_dfa)
+    {
+        first_state->add_t_function(make_pair(1, dfa.start()));
+    }
+    auto nfa = NFA(first_state, nullptr);
+    state_name = 0;
+    auto final_dfa = builder.dfa_from_nfa(nfa, state_name);
+
+    // Apend a dfa for each opearator and special character, except for the 0 character
+    for (auto &op : diff_between_sets(union_between_sets(char_map["operator"], char_map["special"]),
+                                      Set<char>(vector<char>{'\0'})))
+    {
+        state_name++;
+        auto state = State(state_name);
+        state.set_as_accepting(true);
+        // TODO Handle multiple character operators
+        final_dfa.start()->add_t_function(make_pair((int)op, make_shared<State>(state)));
+    }
+
+    return final_dfa;
+}
+
 Parser::Parser(Scanner &sc) : scanner(sc)
 {
+    auto char_map = scanner.get_char_map();
 
-    string all_letter_regex = "(";
-    for (auto &c : scanner.get_char_map()["letter"].get_items())
+    // Generate Sets
+    auto ANY = Set<char>();
+    for (auto &[key, set] : char_map)
     {
-        all_letter_regex = all_letter_regex + c + "|";
+        ANY = union_between_sets<char>(ANY, set);
     }
-    all_letter_regex.pop_back();
-    all_letter_regex = all_letter_regex + ")*";
-    all_letter_regex = all_letter_regex + ".#";
+    ANY = diff_between_sets(ANY, char_map["operator"]);
+    ANY = diff_between_sets(ANY, char_map["special"]);
 
-    auto a = Set<string>(vector<string>{"a", "b", "c"});
-    auto b = Set<string>(vector<string>{"1", "2", "3"});
-    auto o = Set<string>(vector<string>{"|"});
-    auto p1 = Set<string>(vector<string>{"("});
-    auto p2 = Set<string>(vector<string>{")"});
-    auto kleene = Set<string>(vector<string>{"*"});
-    auto hashtag = Set<string>(vector<string>{"#"});
-    auto test_regex = vector<Set<string>>{p1, a, o, b, p2, hashtag};
+    auto stringCh = diff_between_sets(ANY, char_map["\""]);
+    stringCh = diff_between_sets(ANY, char_map["\\"]);
+    stringCh = diff_between_sets(ANY, char_map["cr"]);
+    stringCh = diff_between_sets(ANY, char_map["lf"]);
 
-    test_regex = format_regex(test_regex, scanner.get_char_map()["operator"]);
-    auto postfix_regex = infix_to_postfix(test_regex, scanner.get_char_map(), get_precedence);
-    auto syntax_tree = postfix_eval(postfix_regex, scanner.get_char_map()["operator"]);
-    auto dfa_b = DFABuilder(scanner.get_char_map());
-    auto finder = dfa_b.dfa_from_syntax_tree(syntax_tree);
-    finder.draw_machine("Scanner_DFA");
+    auto charCh = diff_between_sets(ANY, char_map["\'"]);
+    charCh = diff_between_sets(ANY, char_map["\\"]);
+    charCh = diff_between_sets(ANY, char_map["cr"]);
+    charCh = diff_between_sets(ANY, char_map["lf"]);
+
+    // Generate token regexes
+    auto kleene = Set<char>(vector<char>{'*'});
+    auto left_p = Set<char>(vector<char>{'('});
+    auto right_p = Set<char>(vector<char>{')'});
+    auto or_op = Set<char>(vector<char>{'|'});
+
+    // TODO make ident accept digits
+    auto ident = vector<Set<char>>{char_map["letter"], kleene};
+    auto equal = vector<Set<char>>{char_map["="]};
+    auto dot = vector<Set<char>>{char_map["."]};
+    auto minus = vector<Set<char>>{char_map["-"]};
+    auto l_corchet = vector<Set<char>>{char_map["{"]};
+    auto r_corchet = vector<Set<char>>{char_map["}"]};
+
+    auto string_regex = vector<Set<char>>{char_map["\""],        left_p,  stringCh, or_op,         char_map["\\"],
+                                          char_map["printable"], right_p, kleene,   char_map["\""]};
+    auto char_regex = vector<Set<char>>{char_map["\'"],        left_p,          charCh, or_op,   char_map["\\"],
+                                        char_map["printable"], char_map["hex"], kleene, right_p, char_map["\'"]};
+
+    auto all_regex =
+        vector<vector<Set<char>>>{ident, equal, string_regex, char_regex, dot, minus, l_corchet, r_corchet};
+
+    auto finder = generate_dfa_finder(all_regex, char_map);
+    // finder.print_machine();
+    // finder.draw_machine("Scanner_DFA");
     scanner.set_finder(finder);
+    scanner.scan();
 }
 
 Parser::~Parser()
@@ -273,10 +326,11 @@ Parser::~Parser()
 void Parser::parse()
 {
     la_token = scanner.scan();
-    for (int i = 0; i < 10; i++)
+    while (la_token.name() != "EOF")
     {
         c_token = la_token;
         cout << c_token.value() << endl;
         la_token = scanner.scan();
     }
+    cout << "<" << la_token.name() << ">" << endl;
 }

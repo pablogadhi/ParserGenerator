@@ -71,10 +71,9 @@ DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran, F a
     return DFA(state_ptrs[0], state_ptrs[state_ptrs.size() - 1]);
 }
 
-DFA dfa_from_nfa(NFA nfa)
+DFA DFABuilder::dfa_from_nfa(NFA nfa, int &name_index)
 {
     Set<Set<State>> d_states;
-    int name_index = 0;
     d_states.add(e_closure(Set(name_index, vector<State>{(*nfa.start())})));
     auto symbols = nfa.get_all_input_symbols();
     vector<pair<pair<Set<State>, int>, Set<State>>> d_tran;
@@ -124,7 +123,7 @@ void nullable(shared_ptr<TreeNode<int>> node)
     bool is_nullable;
     switch (node->symbol())
     {
-    case 36:
+    case 1:
     case 42:
     case 63:
         is_nullable = true;
@@ -175,7 +174,7 @@ void first_last_pos(shared_ptr<TreeNode<int>> node, string info_entry_key, bool 
 
     switch (node->symbol())
     {
-    case 36:
+    case 1:
         break;
     case 124:
         result = first_last_pos_or(node->left(), node->right(), info_entry_key, last);
@@ -270,7 +269,7 @@ bool has_set_sharp_node(Set<int> set, int sharp_pos)
     return false;
 }
 
-DFABuilder::DFABuilder(unordered_map<string, Set<string>> alphabet) : char_map(alphabet)
+DFABuilder::DFABuilder(unordered_map<string, Set<char>> alphabet) : char_map(alphabet)
 {
 }
 
@@ -283,17 +282,17 @@ vector<int> DFABuilder::get_all_input_symbols(shared_ptr<TreeNode<int>> root_ptr
     vector<int> symbols;
     for (auto &node : root_ptr->flatten())
     {
-        auto s = node->symbol();
-        if (char_map["operator"].has_item(string(1, (char)s)) == -1 &&
-            char_map["special"].has_item(string(1, (char)s)) == -1)
+        auto c = node->symbol();
+        if (char_map["operator"].has_item(c) == -1 && char_map["special"].has_item(c) == -1 &&
+            !is_item_in_vector(c, symbols))
         {
-            symbols.push_back(s);
+            symbols.push_back(c);
         }
     }
     return symbols;
 }
 
-DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root)
+DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root, int &name_index)
 {
     auto root_ptr = make_shared<TreeNode<int>>(root);
 
@@ -302,10 +301,9 @@ DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root)
     first_last_pos(root_ptr, "lastpos", true);
     followpos(root_ptr);
 
-    print_info(root_ptr);
+    // print_info(root_ptr);
 
     Set<Set<int>> d_states;
-    int name_index = 0;
     d_states.add(any_cast<Set<int>>(root_ptr->get_info()["firstpos"]));
     d_states[0].set_name(name_index);
     vector<pair<pair<Set<int>, int>, Set<int>>> d_tran;
@@ -355,7 +353,6 @@ DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root)
         unmarked_states = get_unmarked_states<int>(d_states);
     }
 
-    // root_ptr->print_info();
     auto sharp_pos = root_ptr->right()->name();
     return machine_from_transitions<int, function<bool(Set<int>, int)>, int>(d_tran, has_set_sharp_node, sharp_pos);
 }

@@ -5,9 +5,9 @@ NFA nfa_from_or(NFA &a, NFA &b, int &last_index)
     shared_ptr<State> first_state = make_shared<State>(last_index + 1);
     shared_ptr<State> last_state = make_shared<State>(last_index + 2);
     first_state->set_t_functions(
-        vector<pair<int, shared_ptr<State>>>{make_pair(36, a.start()), make_pair(36, b.start())});
-    a.end()->set_t_functions(vector<pair<int, shared_ptr<State>>>{make_pair(36, last_state)});
-    b.end()->set_t_functions(vector<pair<int, shared_ptr<State>>>{make_pair(36, last_state)});
+        vector<pair<int, shared_ptr<State>>>{make_pair(1, a.start()), make_pair(1, b.start())});
+    a.end()->set_t_functions(vector<pair<int, shared_ptr<State>>>{make_pair(1, last_state)});
+    b.end()->set_t_functions(vector<pair<int, shared_ptr<State>>>{make_pair(1, last_state)});
     last_index += 2;
     last_state->set_as_accepting(true);
     a.end()->set_as_accepting(false);
@@ -38,9 +38,9 @@ NFA nfa_from_kleene(NFA &a, int &last_index)
     shared_ptr<State> first_state = make_shared<State>(last_index + 1);
     shared_ptr<State> last_state = make_shared<State>(last_index + 2);
     first_state->set_t_functions(
-        vector<pair<int, shared_ptr<State>>>{make_pair(36, a.start()), make_pair(36, last_state)});
-    a.end()->add_t_function(make_pair(36, a.start()));
-    a.end()->add_t_function(make_pair(36, last_state));
+        vector<pair<int, shared_ptr<State>>>{make_pair(1, a.start()), make_pair(1, last_state)});
+    a.end()->add_t_function(make_pair(1, a.start()));
+    a.end()->add_t_function(make_pair(1, last_state));
     last_index += 2;
     last_state->set_as_accepting(true);
     a.end()->set_as_accepting(false);

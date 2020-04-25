@@ -32,7 +32,7 @@ using namespace std;
 //     }
 //     else if (op == '?')
 //     {
-//         auto e_transition = nfa_from_transition(36, node_index);
+//         auto e_transition = nfa_from_transition(1, node_index);
 //         return nfa_from_or(operands[0], e_transition, node_index);
 //     }
 //     return NFA(NULL, NULL);

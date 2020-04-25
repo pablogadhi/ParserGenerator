@@ -37,6 +37,6 @@ template <class T> class TreeNode
 };
 
 template class TreeNode<int>;
-template class TreeNode<Set<string>>;
+template class TreeNode<Set<char>>;
 
 #endif

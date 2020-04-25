@@ -33,6 +33,7 @@ class DFA : public StateMachine<DFA>
     DFA();
     DFA(shared_ptr<State>, shared_ptr<State>);
     void move(char);
+    State peek_move(char);
     void reset_movements();
     State current();
 };

@@ -62,7 +62,7 @@ template <class MachineType> vector<int> StateMachine<MachineType>::get_all_inpu
     {
         for (auto &trans : state->get_t_functions())
         {
-            if (!is_item_in_vector(trans.first, symbols) and trans.first != 36)
+            if (!is_item_in_vector(trans.first, symbols) and trans.first != 1)
             {
                 symbols.push_back(trans.first);
             }
@@ -93,10 +93,10 @@ template <class MachineType> void StateMachine<MachineType>::draw_machine(string
 
     vector<shared_ptr<State>> flattend_machine = flatten();
 
-    if (flattend_machine.size() == 1)
-    {
-        print_machine();
-    }
+    // if (flattend_machine.size() == 1)
+    // {
+    //     print_machine();
+    // }
 
     for (auto &state : flattend_machine)
     {
@@ -119,17 +119,33 @@ template <class MachineType> void StateMachine<MachineType>::draw_machine(string
         }
 
         delete[] c_name;
+        unordered_map<string, string> transtions;
         for (auto &trans : state->get_t_functions())
         {
-            c_name = new char[to_string(trans.second->name()).length() + 1];
-            strcpy(c_name, to_string(trans.second->name()).c_str());
+            auto name = to_string(trans.second->name());
+            auto edge_lbl = transtions[name];
+
+            transtions[name] = edge_lbl + (char)trans.first + ",";
+        }
+
+        for (auto const &[key, val] : transtions)
+        {
+            c_name = new char[key.length() + 1];
+            strcpy(c_name, key.c_str());
             auto second_node = agnode(graph, c_name, TRUE);
             delete[] c_name;
-            // TODO Calculate string length correctly
-            char *edge_label = new char[10];
-            string edge_string = "";
-            edge_string.push_back((char)trans.first);
-            strcpy(edge_label, edge_string.c_str());
+
+            string edge_str;
+            if (val.size() > 20)
+            {
+                edge_str = val.substr(0, 1) + ".." + val.substr(val.size() - 2, 1);
+            }
+            else
+            {
+                edge_str = val;
+            }
+            char *edge_label = new char[edge_str.length() + 1];
+            strcpy(edge_label, edge_str.c_str());
             auto edge = agedge(graph, first_node, second_node, edge_label, TRUE);
             agsafeset(edge, (char *)"label", edge_label, (char *)"");
             delete[] edge_label;
@@ -202,17 +218,20 @@ DFA::DFA(shared_ptr<State> start_ptr, shared_ptr<State> end_ptr)
 
 void DFA::move(char c)
 {
+    current_state = peek_move(c);
+}
+
+State DFA::peek_move(char c)
+{
     auto movement = current_state.move((int)c);
     if (movement.size() != 1)
     {
-        // TODO Do Something when the dfa can't move
-        current_state = State();
-        current_state.set_as_accepting(false);
+        // throw std::logic_error("Lexical Error! Failed to move forward!");
+        auto empty_state = State();
+        empty_state.set_as_accepting(false);
+        return empty_state;
     }
-    else
-    {
-        current_state = movement[0];
-    }
+    return movement[0];
 }
 
 void DFA::reset_movements()

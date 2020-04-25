@@ -54,7 +54,7 @@ Set<State> State::next_e_states()
     Set<State> e_states;
     for (auto &trans : get_t_functions())
     {
-        if (trans.first == 36)
+        if (trans.first == 1)
         {
             e_states.add(*trans.second);
         }

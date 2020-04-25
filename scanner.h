@@ -20,14 +20,16 @@ enum token_type
 class Token
 {
   private:
+    string t_name;
     string t_val;
     token_type t_type;
 
   public:
     Token();
-    Token(string);
+    Token(string, string);
     ~Token();
     string value();
+    string name();
     void add_char(char);
     bool empty();
     token_type type();
@@ -55,7 +57,7 @@ class Scanner
     Token n_token;
     vector<Token> token_list;
     DFA finder = DFA();
-    unordered_map<string, Set<string>> char_map;
+    unordered_map<string, Set<char>> char_map;
 
     void read_into_string_buffer(string &);
 
@@ -67,10 +69,11 @@ class Scanner
     void set_finder(DFA);
     Token scan();
     void next_char();
+    char peek_char();
     Token next_token();
     Token current();
     Token look_ahead();
-    unordered_map<string, Set<string>> get_char_map();
+    unordered_map<string, Set<char>> get_char_map();
 };
 
 #endif
