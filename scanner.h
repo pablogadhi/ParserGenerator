@@ -9,30 +9,21 @@
 
 using namespace std;
 
-enum token_type
-{
-    KEYWORD,
-    IDENTIFIER,
-    CONSTANT,
-    OPERATOR,
-};
-
 class Token
 {
   private:
     string t_name;
     string t_val;
-    token_type t_type;
 
   public:
     Token();
     Token(string, string);
     ~Token();
-    string value();
+    void set_name(string);
     string name();
+    string value();
     void add_char(char);
     bool empty();
-    token_type type();
     bool operator==(Token &t)
     {
         return t_val.compare(t.value()) == 0;
@@ -41,6 +32,19 @@ class Token
     {
         return t_val.compare(t.value()) > 0;
     }
+};
+
+class SymbolTable
+{
+  private:
+    unordered_map<string, Set<char>> char_set_map;
+    unordered_map<string, string> keywords_map;
+
+  public:
+    void add_char_set(string, Set<char>);
+    void add_keyword(string, string);
+    unordered_map<string, Set<char>> char_sets();
+    unordered_map<string, string> keywords();
 };
 
 class Scanner
@@ -55,10 +59,8 @@ class Scanner
     int lexeme_begin_idx;
     Token c_token;
     Token n_token;
-    vector<Token> token_list;
     DFA finder = DFA();
-    unordered_map<string, Set<char>> char_map;
-    unordered_map<string, string> keywords;
+    SymbolTable s_table;
 
     void read_into_string_buffer(string &);
 
@@ -68,13 +70,14 @@ class Scanner
     ~Scanner();
 
     void set_finder(DFA);
+    SymbolTable &symbols();
     Token scan();
     void next_char();
     char peek_char();
+    void ignore_all_blank_chars();
     Token next_token();
     Token current();
     Token look_ahead();
-    unordered_map<string, Set<char>> get_char_map();
 };
 
 #endif

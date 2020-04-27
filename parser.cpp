@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "dfa_builder.h"
+#include "utils.h"
 #include <iostream>
 #include <stack>
 
@@ -270,26 +271,7 @@ DFA generate_dfa_finder(vector<pair<string, vector<Set<char>>>> all_regex, unord
 
 Parser::Parser(Scanner &sc) : scanner(sc)
 {
-    auto char_map = scanner.get_char_map();
-
-    // Generate Sets
-    auto ANY = Set<char>();
-    for (auto &[key, set] : char_map)
-    {
-        ANY = union_between_sets<char>(ANY, set);
-    }
-    ANY = diff_between_sets(ANY, char_map["operator"]);
-    ANY = diff_between_sets(ANY, char_map["special"]);
-
-    auto stringCh = diff_between_sets(ANY, char_map["\""]);
-    stringCh = diff_between_sets(ANY, char_map["\\"]);
-    stringCh = diff_between_sets(ANY, char_map["cr"]);
-    stringCh = diff_between_sets(ANY, char_map["lf"]);
-
-    auto charCh = diff_between_sets(ANY, char_map["\'"]);
-    charCh = diff_between_sets(ANY, char_map["\\"]);
-    charCh = diff_between_sets(ANY, char_map["cr"]);
-    charCh = diff_between_sets(ANY, char_map["lf"]);
+    auto char_map = scanner.symbols().char_sets();
 
     // Generate token regexes
     auto kleene = Set<char>(vector<char>{'*'});
@@ -298,18 +280,27 @@ Parser::Parser(Scanner &sc) : scanner(sc)
     auto or_op = Set<char>(vector<char>{'|'});
 
     // TODO make ident accept digits
-    auto ident = vector<Set<char>>{char_map["letter"], kleene};
-    auto string_regex = vector<Set<char>>{char_map["\""],        left_p,  stringCh, or_op,         char_map["\\"],
-                                          char_map["printable"], right_p, kleene,   char_map["\""]};
-    auto char_regex = vector<Set<char>>{char_map["\'"],        left_p,          charCh, or_op,   char_map["\\"],
-                                        char_map["printable"], char_map["hex"], kleene, right_p, char_map["\'"]};
+    auto ident =
+        vector<Set<char>>{char_map["letter"], left_p, char_map["letter"], or_op, char_map["digit"], right_p, kleene};
+    auto string_regex =
+        vector<Set<char>>{char_map["\""], left_p, char_map["stringCh"], or_op, char_map["\\"], char_map["printable"],
+                          right_p,        kleene, char_map["\""]};
+    auto char_regex = vector<Set<char>>{
+        char_map["\'"], left_p,  char_map["charCh"], or_op, char_map["\\"], char_map["printable"], char_map["hex"],
+        kleene,         right_p, char_map["\'"]};
+    auto dot_regex = vector<Set<char>>{char_map["."]};
+    auto equal = vector<Set<char>>{char_map["="]};
+    auto minus = vector<Set<char>>{char_map["-"]};
+    auto double_dot = vector<Set<char>>{char_map["."], char_map["."]};
 
     auto all_regex = vector<pair<string, vector<Set<char>>>>{
-        make_pair("ident", ident), make_pair("string", string_regex), make_pair("char", char_regex)};
+        make_pair("ident", ident),   make_pair("string", string_regex), make_pair("char", char_regex),
+        make_pair("..", double_dot), make_pair(".", dot_regex),         make_pair("-", minus),
+        make_pair("=", equal)};
 
     auto finder = generate_dfa_finder(all_regex, char_map);
     // finder.print_machine();
-    // finder.draw_machine("Scanner_DFA");
+    finder.draw_machine("Scanner_DFA");
     scanner.set_finder(finder);
     scanner.scan();
 }
@@ -318,14 +309,180 @@ Parser::~Parser()
 {
 }
 
+void Parser::get()
+{
+    current_token = scanner.scan();
+    token_list.push_back(current_token);
+}
+
+void Parser::expect(string str)
+{
+    while (true)
+    {
+        get();
+        if (current_token.name() == str || current_token.name() == "EOF")
+        {
+            break;
+        }
+        else
+        {
+            // TODO Add Syntatic Error to error list
+        }
+    }
+}
+
 void Parser::parse()
 {
-    la_token = scanner.scan();
-    while (la_token.name() != "EOF")
+    // Compiler Name
+    expect("COMPILER");
+    expect("ident");
+    compiler_name = current_token.value();
+
+    // TODO Handle Semantic Action
+
+    // Character Sets
+    expect("CHARACTERS");
+    while (scanner.look_ahead().name() == "ident")
     {
-        c_token = la_token;
-        cout << "(" << c_token.name() << ", " << c_token.value() << ")" << endl;
-        la_token = scanner.scan();
+        set_decl();
     }
-    cout << "<" << la_token.name() << ">" << endl;
+
+    // Keywords
+    expect("KEYWORDS");
+    while (scanner.look_ahead().name() == "ident")
+    {
+        keyword_decl();
+    }
+
+    // Tokens
+    expect("TOKENS");
+    while (scanner.look_ahead().name() == "ident")
+    {
+        token_decl();
+    }
+
+    // Productions
+
+    // END
+    expect("END");
+    expect("EOF");
+
+    int i = 0;
+
+    // while (la_token.name() != "EOF")
+    // {
+    //     c_token = la_token;
+    //     cout << "(" << c_token.name() << ", " << c_token.value() << ")" << endl;
+    //     la_token = scanner.scan();
+    // }
+    // cout << "<" << la_token.name() << ">" << endl;
+}
+
+void Parser::set_decl()
+{
+    get();
+    string set_name = current_token.value();
+    Set<char> char_set;
+    function<void(char)> single_op_func = [&](char c) { char_set.add(c); };
+    function<void(Set<char>)> set_op_func = [&](Set<char> set) { char_set = union_between_sets(char_set, set); };
+    expect("=");
+    while (scanner.look_ahead().name() != ".")
+    {
+        get();
+        if (current_token.name() == "string")
+        {
+            for (auto &c : current_token.value().substr(1, current_token.value().size() - 2))
+            {
+                single_op_func(c);
+            }
+        }
+        else if (current_token.name() == "char")
+        {
+            single_op_func(str_to_char(current_token.value()));
+        }
+        else if (current_token.name() == "+")
+        {
+            single_op_func = [&](char c) { char_set.add(c); };
+            set_op_func = [&](Set<char> set) { char_set = union_between_sets(char_set, set); };
+        }
+        else if (current_token.name() == "-")
+        {
+            single_op_func = [&](char c) { char_set.remove(c); };
+            set_op_func = [&](Set<char> set) { char_set = diff_between_sets(char_set, set); };
+        }
+        else if (current_token.name() == "..")
+        {
+            get();
+            auto limit_char = str_to_char(current_token.value());
+            for (char c = char_set[0] + 1; c <= limit_char; c++)
+            {
+                char_set.add(c);
+            }
+        }
+        else if (current_token.name() == "ANY")
+        {
+            auto ANY = Set<char>();
+            for (auto &[key, set] : new_table.char_sets())
+            {
+                ANY = union_between_sets(ANY, set);
+            }
+            char_set = union_between_sets(ANY, char_set);
+        }
+        else // The current token is an ident
+        {
+            auto prev_sets = new_table.char_sets();
+            if (prev_sets.find(current_token.value()) != prev_sets.end())
+            {
+                auto other_set = prev_sets[current_token.value()];
+                set_op_func(other_set);
+            }
+            else
+            {
+                // TODO Add Error: Set Not Found
+            }
+        }
+    }
+    new_table.add_char_set(set_name, char_set);
+    get();
+}
+
+void Parser::keyword_decl()
+{
+    get();
+    auto keyword_name = current_token.value();
+    expect("=");
+    expect("string");
+    auto real_str = current_token.value().substr(1, current_token.value().size() - 2);
+    new_table.add_keyword(keyword_name, real_str);
+    expect(".");
+}
+
+void Parser::token_decl()
+{
+    get();
+    auto token_name = current_token.value();
+    vector<Set<char>> regex;
+    expect("=");
+    while (scanner.look_ahead().name() != ".")
+    {
+        get();
+        if (current_token.name() == "ident")
+        {
+            regex.push_back(new_table.char_sets()[current_token.value()]);
+        }
+        else if (current_token.name() == "char")
+        {
+            regex.push_back(Set<char>(vector<char>{str_to_char(current_token.value())}));
+        }
+        else
+        {
+            regex.push_back(Set<char>(vector<char>{current_token.value()[0]}));
+        }
+    }
+    token_regex_list.push_back(make_pair(token_name, regex));
+    get();
+}
+
+void Parser::write_scanner()
+{
 }

@@ -33,9 +33,21 @@ void Token::add_char(char c)
     t_val.push_back(c);
 }
 
-token_type Token::type()
+void SymbolTable::add_char_set(string set_name, Set<char> new_set)
 {
-    return t_type;
+    char_set_map[set_name] = new_set;
+}
+void SymbolTable::add_keyword(string name, string new_keyword)
+{
+    keywords_map[name] = new_keyword;
+}
+unordered_map<string, Set<char>> SymbolTable::char_sets()
+{
+    return char_set_map;
+}
+unordered_map<string, string> SymbolTable::keywords()
+{
+    return keywords_map;
 }
 
 Scanner::Scanner()
@@ -51,20 +63,20 @@ Scanner::Scanner(string file_name)
     }
 
     // Initialize Character Map
-    char_map["operator"] = Set<char>(vector<char>{'|', '*', '+', '?', '\0', '-', '=', '.'});
-    char_map["special"] = Set<char>(vector<char>{'(', ')', '{', '}'});
-    char_map["="] = Set<char>(vector<char>{'='});
-    char_map["-"] = Set<char>(vector<char>{'-'});
-    char_map["."] = Set<char>(vector<char>{'.'});
-    char_map["{"] = Set<char>(vector<char>{'{'});
-    char_map["}"] = Set<char>(vector<char>{'}'});
-    char_map["\""] = Set<char>(vector<char>{'\"'});
-    char_map["\'"] = Set<char>(vector<char>{'\''});
-    char_map["\\"] = Set<char>(vector<char>{'\\'});
-    char_map["cr"] = Set<char>(vector<char>{'\r'});
-    char_map["lf"] = Set<char>(vector<char>{'\n'});
-    char_map["tab"] = Set<char>(vector<char>{'\t'});
-    char_map["space"] = Set<char>(vector<char>{' '});
+    s_table.add_char_set("operator", Set<char>(vector<char>{'|', '*', '+', '?', '\0'}));
+    s_table.add_char_set("special", Set<char>(vector<char>{'(', ')', '{', '}'}));
+    s_table.add_char_set("=", Set<char>(vector<char>{'='}));
+    s_table.add_char_set("-", Set<char>(vector<char>{'-'}));
+    s_table.add_char_set(".", Set<char>(vector<char>{'.'}));
+    s_table.add_char_set("{", Set<char>(vector<char>{'{'}));
+    s_table.add_char_set("}", Set<char>(vector<char>{'}'}));
+    s_table.add_char_set("\"", Set<char>(vector<char>{'\"'}));
+    s_table.add_char_set("\'", Set<char>(vector<char>{'\''}));
+    s_table.add_char_set("\\", Set<char>(vector<char>{'\\'}));
+    s_table.add_char_set("cr", Set<char>(vector<char>{'\r'}));
+    s_table.add_char_set("lf", Set<char>(vector<char>{'\n'}));
+    s_table.add_char_set("tab", Set<char>(vector<char>{'\t'}));
+    s_table.add_char_set("space", Set<char>(vector<char>{' '}));
     auto letter_set = Set<char>();
     for (char c = 'A'; c <= 'Z'; c++)
     {
@@ -76,38 +88,60 @@ Scanner::Scanner(string file_name)
         letter_set.add(c);
     }
     letter_set.add('_');
-    char_map["letter"] = letter_set;
+    s_table.add_char_set("letter", letter_set);
 
     auto digit_set = Set<char>();
     for (char c = '0'; c <= '9'; c++)
     {
         digit_set.add(c);
     }
-    char_map["digit"] = digit_set;
+    s_table.add_char_set("digit", digit_set);
 
     auto hex_letter = Set<char>();
     for (char c = 'a'; c <= 'f'; c++)
     {
         hex_letter.add(c);
     }
-    char_map["hex"] = union_between_sets(digit_set, hex_letter);
+    s_table.add_char_set("hex", union_between_sets(digit_set, hex_letter));
 
     auto printable = Set<char>();
     for (char c = ' '; c <= '~'; c++)
     {
         printable.add(c);
     }
-    printable = diff_between_sets(printable, char_map["operator"]);
-    printable = diff_between_sets(printable, char_map["special"]);
-    char_map["printable"] = printable;
+    printable = diff_between_sets(printable, s_table.char_sets()["operator"]);
+    printable = diff_between_sets(printable, s_table.char_sets()["special"]);
+    s_table.add_char_set("printable", printable);
+
+    auto ANY = Set<char>();
+    for (auto &[key, set] : s_table.char_sets())
+    {
+        ANY = union_between_sets<char>(ANY, set);
+    }
+    ANY = diff_between_sets(ANY, s_table.char_sets()["operator"]);
+    ANY = diff_between_sets(ANY, s_table.char_sets()["special"]);
+    s_table.add_char_set("ANY", ANY);
+
+    auto stringCh = diff_between_sets(ANY, s_table.char_sets()["\""]);
+    stringCh = diff_between_sets(ANY, s_table.char_sets()["\\"]);
+    stringCh = diff_between_sets(ANY, s_table.char_sets()["cr"]);
+    stringCh = diff_between_sets(ANY, s_table.char_sets()["lf"]);
+    s_table.add_char_set("stringCh", stringCh);
+
+    auto charCh = diff_between_sets(ANY, s_table.char_sets()["\'"]);
+    charCh = diff_between_sets(ANY, s_table.char_sets()["\\"]);
+    charCh = diff_between_sets(ANY, s_table.char_sets()["cr"]);
+    charCh = diff_between_sets(ANY, s_table.char_sets()["lf"]);
+    s_table.add_char_set("charCh", charCh);
 
     // Initialize keywords
-    keywords["COMPILER"] = "COMPILER";
-    keywords["CHARACTERS"] = "CHARACTERS";
-    keywords["KEYWORDS"] = "KEYWORDS";
-    keywords["TOKENS"] = "TOKENS";
-    keywords["END"] = "END";
-    keywords["ANY"] = "ANY";
+    s_table.add_keyword("COMPILER", "COMPILER");
+    s_table.add_keyword("CHARACTERS", "CHARACTERS");
+    s_table.add_keyword("KEYWORDS", "KEYWORDS");
+    s_table.add_keyword("EXCEPT", "EXCEPT");
+    s_table.add_keyword("TOKENS", "TOKENS");
+    s_table.add_keyword("END", "END");
+    s_table.add_keyword("ANY", "ANY");
 
     read_into_string_buffer(buffer_0);
     current_buffer = buffer_0;
@@ -124,11 +158,6 @@ Scanner::~Scanner()
 void Scanner::set_finder(DFA dfa)
 {
     finder = dfa;
-}
-
-unordered_map<string, Set<char>> Scanner::get_char_map()
-{
-    return char_map;
 }
 
 void Scanner::read_into_string_buffer(string &out_buffer)
@@ -187,13 +216,18 @@ Token Scanner::scan()
     return c_token;
 }
 
-Token Scanner::next_token()
+void Scanner::ignore_all_blank_chars()
 {
-    prev_buffer = current_buffer;
     while (*forward == ' ' || *forward == '\t' || *forward == '\n' || *forward == '\r')
     {
         next_char();
     }
+}
+
+Token Scanner::next_token()
+{
+    prev_buffer = current_buffer;
+    ignore_all_blank_chars();
 
     // Handle EOF
     if (forward == current_buffer.end())
@@ -232,16 +266,32 @@ Token Scanner::next_token()
         lexeme_str = current_buffer.substr(lexeme_begin_idx, l_len);
     }
 
-    string token_name;
-    if (keywords.find(lexeme_str) != keywords.end())
+    string token_name = finder.current().reference_name();
+    if (s_table.keywords().find(lexeme_str) != s_table.keywords().end())
     {
-        token_name = keywords[lexeme_str];
-    }
-    else
-    {
-        token_name = finder.current().reference_name();
+        ignore_all_blank_chars();
+        // QuickFix for reading keywords in the COCOL grammar
+        if (*forward != '=')
+        {
+            token_name = s_table.keywords()[lexeme_str];
+        }
     }
 
     finder.reset_movements();
     return Token(token_name, lexeme_str);
+}
+
+Token Scanner::current()
+{
+    return c_token;
+}
+
+Token Scanner::look_ahead()
+{
+    return n_token;
+}
+
+SymbolTable &Scanner::symbols()
+{
+    return s_table;
 }

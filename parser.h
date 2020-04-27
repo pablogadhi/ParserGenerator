@@ -8,14 +8,21 @@ class Parser
 {
   private:
     Scanner &scanner;
-    Token c_token;
-    Token la_token;
-    TreeNode<int> syntax_tree_head;
+    Token current_token;
+    vector<Token> token_list;
+    string compiler_name;
+    SymbolTable new_table;
+    vector<pair<string, vector<Set<char>>>> token_regex_list;
 
   public:
     Parser(Scanner &);
     ~Parser();
     void parse();
+    void get();
+    void expect(string);
+    void set_decl();
+    void keyword_decl();
+    void token_decl();
     void write_scanner();
 };
 

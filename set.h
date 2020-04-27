@@ -47,6 +47,15 @@ template <class T> class Set
         items.push_back(item);
     }
 
+    void remove(T item)
+    {
+        auto item_idx = find(items.begin(), items.end(), item);
+        if (item_idx != items.end())
+        {
+            items.erase(item_idx);
+        }
+    }
+
     bool is_marked()
     {
         return marked;
