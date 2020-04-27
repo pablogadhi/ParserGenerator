@@ -1,0 +1,317 @@
+/*----------------------------------------------------------------------
+scanner.h Specification
+-----------------------------------------------------------------------*/
+
+-->begin
+#ifndef SCANNER_H
+#define SCANNER_H
+
+#include "state_machine.h"
+#include <fstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Token
+{
+  private:
+    string t_name;
+    string t_val;
+
+  public:
+    Token();
+    Token(string, string);
+    ~Token();
+    void set_name(string);
+    string name();
+    string value();
+    void add_char(char);
+    bool empty();
+    bool operator==(Token &t)
+    {
+        return t_val.compare(t.value()) == 0;
+    }
+    bool operator<(Token &t)
+    {
+        return t_val.compare(t.value()) > 0;
+    }
+};
+
+class SymbolTable
+{
+  private:
+    unordered_map<string, Set<char>> char_set_map;
+    unordered_map<string, string> keywords_map;
+
+  public:
+    void add_char_set(string, Set<char>);
+    void add_keyword(string, string);
+    unordered_map<string, Set<char>> char_sets();
+    unordered_map<string, string> keywords();
+};
+
+class Scanner
+{
+  private:
+    ifstream file_buffer;
+    string buffer_0;
+    string buffer_1;
+    string current_buffer;
+    string prev_buffer;
+    string::iterator forward;
+    int lexeme_begin_idx;
+    Token c_token;
+    Token n_token;
+    DFA finder = DFA();
+    SymbolTable s_table;
+
+    void read_into_string_buffer(string &);
+
+  public:
+    Scanner();
+    Scanner(string);
+    ~Scanner();
+
+    void set_finder(DFA);
+    SymbolTable &symbols();
+    Token scan();
+    void next_char();
+    char peek_char();
+    void ignore_all_blank_chars();
+    Token next_token();
+    Token current();
+    Token look_ahead();
+};
+
+#endif
+-->implementation
+
+/*----------------------------------------------------------------------
+scanner.cpp Specification
+-----------------------------------------------------------------------*/
+
+-->begin
+#include "scanner.h"
+#include "iostream"
+
+Token::Token()
+{
+}
+
+Token::Token(string name, string val) : t_name(name), t_val(val)
+{
+}
+
+Token::~Token()
+{
+}
+
+bool Token::empty()
+{
+    return t_val.empty();
+}
+
+string Token::name()
+{
+    return t_name;
+}
+
+string Token::value()
+{
+    return t_val;
+}
+
+void Token::add_char(char c)
+{
+    t_val.push_back(c);
+}
+
+void SymbolTable::add_char_set(string set_name, Set<char> new_set)
+{
+    char_set_map[set_name] = new_set;
+}
+void SymbolTable::add_keyword(string name, string new_keyword)
+{
+    keywords_map[name] = new_keyword;
+}
+unordered_map<string, Set<char>> SymbolTable::char_sets()
+{
+    return char_set_map;
+}
+unordered_map<string, string> SymbolTable::keywords()
+{
+    return keywords_map;
+}
+
+Scanner::Scanner()
+{
+}
+
+Scanner::Scanner(string file_name)
+{
+    file_buffer.open(file_name);
+    if (!file_buffer.is_open())
+    {
+        throw std::logic_error("Failed to open the file!");
+    }
+
+    // Initialize Character Map
+-->char_sets_decl
+
+    // Initialize keywords
+-->keywords_decl
+
+    read_into_string_buffer(buffer_0);
+    current_buffer = buffer_0;
+    prev_buffer = buffer_0;
+    lexeme_begin_idx = 0;
+    forward = current_buffer.begin();
+}
+
+Scanner::~Scanner()
+{
+    file_buffer.close();
+}
+
+void Scanner::set_finder(DFA dfa)
+{
+    finder = dfa;
+}
+
+void Scanner::read_into_string_buffer(string &out_buffer)
+{
+    char *temp_buffer = new char[2048];
+    file_buffer.read(temp_buffer, 2048);
+    out_buffer = string(temp_buffer);
+    // out_buffer = out_buffer + '\0';
+    delete temp_buffer;
+}
+
+void Scanner::next_char()
+{
+    forward++;
+    if (forward == current_buffer.end())
+    {
+        if (file_buffer.eof())
+        {
+            forward = current_buffer.end();
+        }
+        else if (current_buffer == buffer_0)
+        {
+            read_into_string_buffer(buffer_1);
+            current_buffer = buffer_1;
+            forward = current_buffer.begin();
+        }
+        else if (current_buffer == buffer_1)
+        {
+            read_into_string_buffer(buffer_0);
+            current_buffer = buffer_0;
+            forward = current_buffer.begin();
+        }
+    }
+}
+
+char Scanner::peek_char()
+{
+    char peeked;
+    forward++;
+    if (forward == current_buffer.end())
+    {
+        peeked = file_buffer.peek();
+    }
+    else
+    {
+        peeked = *forward;
+    }
+    forward--;
+    return peeked;
+}
+
+Token Scanner::scan()
+{
+    c_token = n_token;
+    n_token = next_token();
+    return c_token;
+}
+
+void Scanner::ignore_all_blank_chars()
+{
+    while (*forward == ' ' || *forward == '\t' || *forward == '\n' || *forward == '\r')
+    {
+        next_char();
+    }
+}
+
+Token Scanner::next_token()
+{
+    prev_buffer = current_buffer;
+    ignore_all_blank_chars();
+
+    // Handle EOF
+    if (forward == current_buffer.end())
+    {
+        return Token("EOF", string(1, '\0'));
+    }
+
+    lexeme_begin_idx = forward - current_buffer.begin();
+
+    // Move until an accepting state is found
+    bool accepting_found = false;
+    State peeked_state = State();
+    // TODO Change second criteria to "Couldn't go forward"
+    while (!accepting_found || peeked_state.is_accepting())
+    {
+        finder.move(*forward);
+        // TODO handle unknown characters
+        if (finder.current().is_accepting())
+        {
+            accepting_found = true;
+            char peeked_c = peek_char();
+            peeked_state = finder.peek_move(peeked_c);
+        }
+        next_char();
+    }
+
+    string lexeme_str;
+    if (current_buffer != prev_buffer)
+    {
+        auto l_end_len = forward - current_buffer.begin();
+        lexeme_str = prev_buffer.substr(lexeme_begin_idx) + current_buffer.substr(0, l_end_len);
+    }
+    else
+    {
+        auto l_len = forward - current_buffer.begin() - lexeme_begin_idx;
+        lexeme_str = current_buffer.substr(lexeme_begin_idx, l_len);
+    }
+
+    string token_name = finder.current().reference_name();
+    if (s_table.keywords().find(lexeme_str) != s_table.keywords().end())
+    {
+        ignore_all_blank_chars();
+        // QuickFix for reading keywords in the COCOL grammar
+        if (*forward != '=')
+        {
+            token_name = s_table.keywords()[lexeme_str];
+        }
+    }
+
+    finder.reset_movements();
+    return Token(token_name, lexeme_str);
+}
+
+Token Scanner::current()
+{
+    return c_token;
+}
+
+Token Scanner::look_ahead()
+{
+    return n_token;
+}
+
+SymbolTable &Scanner::symbols()
+{
+    return s_table;
+}

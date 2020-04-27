@@ -10,7 +10,7 @@ class Parser
     Scanner &scanner;
     Token current_token;
     vector<Token> token_list;
-    string compiler_name;
+    string new_compiler_name;
     SymbolTable new_table;
     vector<pair<string, vector<Set<char>>>> token_regex_list;
 
@@ -24,6 +24,7 @@ class Parser
     void keyword_decl();
     void token_decl();
     void write_scanner();
+    string compiler_name();
 };
 
 #endif

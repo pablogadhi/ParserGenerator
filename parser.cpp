@@ -336,7 +336,7 @@ void Parser::parse()
     // Compiler Name
     expect("COMPILER");
     expect("ident");
-    compiler_name = current_token.value();
+    new_compiler_name = current_token.value();
 
     // TODO Handle Semantic Action
 
@@ -483,6 +483,62 @@ void Parser::token_decl()
     get();
 }
 
+string Parser::compiler_name()
+{
+    return new_compiler_name;
+}
+
 void Parser::write_scanner()
 {
+    ifstream frame_file("scanner.frame");
+    ofstream header(new_compiler_name + "/scanner.h");
+    ofstream cpp_file(new_compiler_name + "/scanner.cpp");
+    string line;
+
+    // Ignore comments
+    while (line != "-->begin")
+    {
+        getline(frame_file, line);
+    }
+
+    // Copy header
+    getline(frame_file, line);
+    while (line != "-->implementation")
+    {
+        header << line << endl;
+        getline(frame_file, line);
+    }
+
+    // Ignore comments
+    while (line != "-->begin")
+    {
+        getline(frame_file, line);
+    }
+
+    // Copy the start of the cpp declaration
+    getline(frame_file, line);
+    while (line != "-->char_sets_decl")
+    {
+        cpp_file << line << endl;
+        getline(frame_file, line);
+    }
+
+    // Generate the char set map
+    for (auto &[key, set] : new_table.char_sets())
+    {
+        string set_str;
+        string command_str = "s_table.add_char_set(\"" + key + "\", Set<char>(vector<char>{";
+        for (auto &c : set)
+        {
+            set_str = set_str + "\'" + c + "\', ";
+        }
+        set_str.pop_back();
+        set_str.pop_back();
+        cpp_file << command_str << set_str << "}));" << endl;
+    }
+
+    // Generate the keyword map
+
+    frame_file.close();
+    header.close();
 }
