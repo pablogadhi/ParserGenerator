@@ -163,6 +163,9 @@ Scanner::Scanner(string file_name)
     // Initialize keywords
 -->keywords_decl
 
+    // Initialize DFA
+-->dfa_decl
+
     read_into_string_buffer(buffer_0);
     current_buffer = buffer_0;
     prev_buffer = buffer_0;

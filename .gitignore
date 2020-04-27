@@ -40,3 +40,6 @@ build/
 *.dot
 *.ps
 *.png
+
+# Coco
+Coco/

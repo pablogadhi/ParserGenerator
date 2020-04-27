@@ -62,5 +62,24 @@ char str_to_char(string str)
     return str_no_quote[0];
 }
 
+string char_to_str(char c)
+{
+    switch (c)
+    {
+    case '\r':
+        return "\'\\r\'";
+    case '\n':
+        return "\'\\n\'";
+    case '\t':
+        return "\'\\t\'";
+    case '\'':
+        return "\'\\\'\'";
+    case '"':
+        return "\'\\\"\'";
+    default:
+        return "\'" + string(1, c) + "\'";
+    }
+}
+
 } // namespace
 #endif

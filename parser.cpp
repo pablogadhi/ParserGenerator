@@ -527,17 +527,39 @@ void Parser::write_scanner()
     for (auto &[key, set] : new_table.char_sets())
     {
         string set_str;
-        string command_str = "s_table.add_char_set(\"" + key + "\", Set<char>(vector<char>{";
+        string command_str = "    s_table.add_char_set(\"" + key + "\", Set<char>(vector<char>{";
         for (auto &c : set)
         {
-            set_str = set_str + "\'" + c + "\', ";
+            set_str = set_str + char_to_str(c) + ", ";
         }
         set_str.pop_back();
         set_str.pop_back();
         cpp_file << command_str << set_str << "}));" << endl;
     }
 
+    // Copy comments
+    getline(frame_file, line);
+    while (line != "-->keywords_decl")
+    {
+        cpp_file << line << endl;
+        getline(frame_file, line);
+    }
+
     // Generate the keyword map
+    for (auto &[key, val] : new_table.keywords())
+    {
+        cpp_file << "    s_table.add_keyword(\"" + key + "\", \"" + val + "\");" << endl;
+    }
+
+    // Copy comments
+    getline(frame_file, line);
+    while (line != "-->dfa_decl")
+    {
+        cpp_file << line << endl;
+        getline(frame_file, line);
+    }
+
+    // Generate DFA declaration
 
     frame_file.close();
     header.close();
