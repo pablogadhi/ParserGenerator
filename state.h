@@ -19,6 +19,7 @@ class State
   public:
     State(int, vector<pair<int, shared_ptr<State>>>);
     State(int);
+    State(int, bool, string);
     State();
     void set_t_functions(vector<pair<int, shared_ptr<State>>>);
     vector<pair<int, shared_ptr<State>>> get_t_functions();

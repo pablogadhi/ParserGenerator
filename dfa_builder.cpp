@@ -63,7 +63,7 @@ DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran,
     return DFA(state_ptrs[0], state_ptrs[state_ptrs.size() - 1]);
 }
 
-DFABuilder::DFABuilder(unordered_map<string, Set<char>> alphabet) : char_map(alphabet)
+DFABuilder::DFABuilder(Set<char> op_set, Set<char> special_set) : operators(op_set), special_chars(special_set)
 {
 }
 
@@ -75,7 +75,7 @@ int is_set_acceptance(Set<State> set, int useless_param)
 {
     for (int i = 0; i < set.size(); i++)
     {
-        if (set.get_items()[i].is_accepting())
+        if (set[i].is_accepting())
         {
             return i;
         }
@@ -85,7 +85,7 @@ int is_set_acceptance(Set<State> set, int useless_param)
 
 string get_ref_name_from_set(Set<State> set, int accept_index)
 {
-    return set.get_items()[accept_index].reference_name();
+    return set[accept_index].reference_name();
 }
 
 DFA DFABuilder::dfa_from_nfa(NFA nfa, int &name_index)
@@ -141,8 +141,8 @@ void nullable(shared_ptr<TreeNode<int>> node)
     switch (node->symbol())
     {
     case 1:
-    case 42:
-    case 63:
+    case 125:
+    case 93:
         is_nullable = true;
         break;
     case 124:
@@ -152,9 +152,6 @@ void nullable(shared_ptr<TreeNode<int>> node)
     case 0:
         is_nullable = any_cast<bool>(node->left()->get_info()["nullable"]) &&
                       any_cast<bool>(node->right()->get_info()["nullable"]);
-        break;
-    case 43:
-        is_nullable = any_cast<bool>(node->left()->get_info()["nullable"]);
         break;
     default:
         is_nullable = false;
@@ -206,9 +203,8 @@ void first_last_pos(shared_ptr<TreeNode<int>> node, string info_entry_key, bool 
             result = any_cast<Set<int>>(important_child->get_info()[info_entry_key]);
         }
         break;
-    case 42:
-    case 43:
-    case 63:
+    case 125:
+    case 93:
         result = any_cast<Set<int>>(important_child->get_info()[info_entry_key]);
         break;
     default:
@@ -244,7 +240,7 @@ void followpos(shared_ptr<TreeNode<int>> node)
                 union_between_sets<int>(any_cast<Set<int>>(node->right()->get_info()["firstpos"]), prev_followpos));
         }
     }
-    else if (node->symbol() == 42 || node->symbol() == 43)
+    else if (node->symbol() == 125)
     {
         for (auto &position : any_cast<Set<int>>(node->get_info()["lastpos"]))
         {
@@ -353,8 +349,7 @@ vector<int> DFABuilder::get_all_input_symbols(shared_ptr<TreeNode<int>> root_ptr
     for (auto &node : root_ptr->flatten())
     {
         auto c = node->symbol();
-        if (char_map["operator"].has_item(c) == -1 && char_map["special"].has_item(c) == -1 &&
-            !is_item_in_vector(c, symbols))
+        if (operators.has_item(c) == -1 && special_chars.has_item(c) == -1 && !is_item_in_vector(c, symbols))
         {
             symbols.push_back(c);
         }

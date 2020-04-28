@@ -75,6 +75,7 @@ class Scanner
     ~Scanner();
 
     void set_finder(DFA);
+    DFA &get_finder();
     SymbolTable &symbols();
     Token scan();
     void next_char();
@@ -154,6 +155,7 @@ Scanner::Scanner(string file_name)
     file_buffer.open(file_name);
     if (!file_buffer.is_open())
     {
+        cout << "Failed to open the file!" << endl;
         throw std::logic_error("Failed to open the file!");
     }
 
@@ -164,7 +166,10 @@ Scanner::Scanner(string file_name)
 -->keywords_decl
 
     // Initialize DFA
+    unordered_map<int, shared_ptr<State>> state_ptrs;
 -->dfa_decl
+
+    finder = DFA(state_ptrs[0], nullptr);
 
     read_into_string_buffer(buffer_0);
     current_buffer = buffer_0;
@@ -181,6 +186,11 @@ Scanner::~Scanner()
 void Scanner::set_finder(DFA dfa)
 {
     finder = dfa;
+}
+
+DFA &Scanner::get_finder()
+{
+    return finder;
 }
 
 void Scanner::read_into_string_buffer(string &out_buffer)
@@ -318,3 +328,4 @@ SymbolTable &Scanner::symbols()
 {
     return s_table;
 }
+-->end

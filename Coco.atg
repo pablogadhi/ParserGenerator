@@ -23,7 +23,6 @@ TOKENS
 	ident     = letter { letter | digit }.
 	number    = digit { digit }.
 	string    = '"' { stringCh | '\\' printable } '"'.
-	badString = '"' { stringCh | '\\' printable } (cr | lf).
 	char      = '\'' ( charCh | '\\' printable { hex } ) '\''.
 
 END Coco.

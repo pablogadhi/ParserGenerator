@@ -12,10 +12,11 @@ int main(int argc, char const *argv[])
     }
 
     auto scanner = Scanner(argv[1]);
+    scanner.get_finder().draw_machine("Scanner_DFA");
     auto token = Token();
     while (token.name() != "EOF")
     {
-        token = token.scan();
+        token = scanner.scan();
         cout << "(" << token.name() << ", " << token.value() << ")" << endl;
     }
 

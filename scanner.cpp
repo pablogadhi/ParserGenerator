@@ -41,11 +41,11 @@ void SymbolTable::add_keyword(string name, string new_keyword)
 {
     keywords_map[name] = new_keyword;
 }
-unordered_map<string, Set<char>> SymbolTable::char_sets()
+unordered_map<string, Set<char>> &SymbolTable::char_sets()
 {
     return char_set_map;
 }
-unordered_map<string, string> SymbolTable::keywords()
+unordered_map<string, string> &SymbolTable::keywords()
 {
     return keywords_map;
 }
@@ -59,24 +59,31 @@ Scanner::Scanner(string file_name)
     file_buffer.open(file_name);
     if (!file_buffer.is_open())
     {
+        cout << "Failed to open the file!" << endl;
         throw std::logic_error("Failed to open the file!");
     }
 
+    Set<char> operators = Set<char>{'|', '}', ']', '\0'};
+    Set<char> special_chars = Set<char>{'(', ')', '{', '['};
+
     // Initialize Character Map
-    s_table.add_char_set("operator", Set<char>(vector<char>{'|', '*', '+', '?', '\0'}));
-    s_table.add_char_set("special", Set<char>(vector<char>{'(', ')', '{', '}'}));
-    s_table.add_char_set("=", Set<char>(vector<char>{'='}));
-    s_table.add_char_set("-", Set<char>(vector<char>{'-'}));
-    s_table.add_char_set(".", Set<char>(vector<char>{'.'}));
-    s_table.add_char_set("{", Set<char>(vector<char>{'{'}));
-    s_table.add_char_set("}", Set<char>(vector<char>{'}'}));
-    s_table.add_char_set("\"", Set<char>(vector<char>{'\"'}));
-    s_table.add_char_set("\'", Set<char>(vector<char>{'\''}));
-    s_table.add_char_set("\\", Set<char>(vector<char>{'\\'}));
-    s_table.add_char_set("cr", Set<char>(vector<char>{'\r'}));
-    s_table.add_char_set("lf", Set<char>(vector<char>{'\n'}));
-    s_table.add_char_set("tab", Set<char>(vector<char>{'\t'}));
-    s_table.add_char_set("space", Set<char>(vector<char>{' '}));
+    s_table.add_char_set("=", Set<char>{'='});
+    s_table.add_char_set("-", Set<char>{'-'});
+    s_table.add_char_set(".", Set<char>{'.'});
+    s_table.add_char_set("|", Set<char>{'|'});
+    s_table.add_char_set("{", Set<char>{'{'});
+    s_table.add_char_set("}", Set<char>{'}'});
+    s_table.add_char_set("[", Set<char>{'['});
+    s_table.add_char_set("]", Set<char>{']'});
+    s_table.add_char_set("(", Set<char>{'('});
+    s_table.add_char_set(")", Set<char>{')'});
+    s_table.add_char_set("\"", Set<char>{'\"'});
+    s_table.add_char_set("\'", Set<char>{'\''});
+    s_table.add_char_set("\\", Set<char>{'\\'});
+    s_table.add_char_set("cr", Set<char>{'\r'});
+    s_table.add_char_set("lf", Set<char>{'\n'});
+    s_table.add_char_set("tab", Set<char>{'\t'});
+    s_table.add_char_set("space", Set<char>{' '});
     auto letter_set = Set<char>();
     for (char c = 'A'; c <= 'Z'; c++)
     {
@@ -109,8 +116,8 @@ Scanner::Scanner(string file_name)
     {
         printable.add(c);
     }
-    printable = diff_between_sets(printable, s_table.char_sets()["operator"]);
-    printable = diff_between_sets(printable, s_table.char_sets()["special"]);
+    printable = diff_between_sets(printable, operators);
+    printable = diff_between_sets(printable, special_chars);
     s_table.add_char_set("printable", printable);
 
     auto ANY = Set<char>();
@@ -118,8 +125,8 @@ Scanner::Scanner(string file_name)
     {
         ANY = union_between_sets<char>(ANY, set);
     }
-    ANY = diff_between_sets(ANY, s_table.char_sets()["operator"]);
-    ANY = diff_between_sets(ANY, s_table.char_sets()["special"]);
+    ANY = diff_between_sets(ANY, operators);
+    ANY = diff_between_sets(ANY, special_chars);
     s_table.add_char_set("ANY", ANY);
 
     auto stringCh = diff_between_sets(ANY, s_table.char_sets()["\""]);
@@ -158,6 +165,11 @@ Scanner::~Scanner()
 void Scanner::set_finder(DFA dfa)
 {
     finder = dfa;
+}
+
+DFA &Scanner::get_finder()
+{
+    return finder;
 }
 
 void Scanner::read_into_string_buffer(string &out_buffer)

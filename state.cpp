@@ -14,6 +14,10 @@ State::State(int name, vector<pair<int, shared_ptr<State>>> t_functions) : s_nam
 {
 }
 
+State::State(int name, bool accepting, string ref) : s_name(name), s_is_accepting(accepting), s_ref_name(ref)
+{
+}
+
 void State::set_t_functions(vector<pair<int, shared_ptr<State>>> t_funcs)
 {
     t_functions = t_funcs;

@@ -23,6 +23,11 @@ template <class T> class Set
     {
     }
 
+    Set(initializer_list<T> init_list)
+    {
+        items = vector<T>(init_list);
+    }
+
     Set()
     {
     }

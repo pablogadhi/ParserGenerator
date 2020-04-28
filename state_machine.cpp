@@ -125,7 +125,18 @@ template <class MachineType> void StateMachine<MachineType>::draw_machine(string
             auto name = to_string(trans.second->name());
             auto edge_lbl = transtions[name];
 
-            transtions[name] = edge_lbl + (char)trans.first + ",";
+            if (trans.first != 34)
+            {
+                transtions[name] = edge_lbl + char_to_str((char)trans.first) + ",";
+            }
+            else
+            {
+                transtions[name] = edge_lbl + "{quote}" + ",";
+            }
+            if (state->name() == 11 && trans.second->name() == 13)
+            {
+                int i = 0;
+            }
         }
 
         for (auto const &[key, val] : transtions)
@@ -136,9 +147,11 @@ template <class MachineType> void StateMachine<MachineType>::draw_machine(string
             delete[] c_name;
 
             string edge_str;
-            if (val.size() > 20)
+            if (val.size() > 15)
             {
-                edge_str = val.substr(0, 1) + ".." + val.substr(val.size() - 2, 1);
+                auto first_index = val.find_first_of(",");
+                auto last_index = val.find_last_of(",", val.size() - 2);
+                edge_str = val.substr(0, first_index) + ".." + val.substr(last_index + 1, val.size() - last_index);
             }
             else
             {
@@ -264,7 +277,7 @@ void NFA::move(char c)
 
 void NFA::reset_movements()
 {
-    current_states = e_closure(Set<State>(vector<State>{*starting_state}));
+    current_states = e_closure(Set<State>{*starting_state});
 }
 
 Set<State> NFA::current()

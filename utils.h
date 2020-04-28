@@ -62,23 +62,49 @@ char str_to_char(string str)
     return str_no_quote[0];
 }
 
-string char_to_str(char c)
+string char_to_str(char c, bool with_quotes = false)
 {
+    string res;
+    if (with_quotes)
+    {
+        res.push_back('\'');
+    }
     switch (c)
     {
     case '\r':
-        return "\'\\r\'";
+        res.push_back('\\');
+        res.push_back('r');
+        break;
     case '\n':
-        return "\'\\n\'";
+        res.push_back('\\');
+        res.push_back('n');
+        break;
     case '\t':
-        return "\'\\t\'";
+        res.push_back('\\');
+        res.push_back('t');
+        break;
     case '\'':
-        return "\'\\\'\'";
-    case '"':
-        return "\'\\\"\'";
+        res.push_back('\\');
+        res.push_back('\'');
+        break;
+    case '\"':
+        res.push_back('\\');
+        res.push_back('"');
+        break;
+    case '\\':
+        res.push_back('\\');
+        res.push_back('\\');
+        break;
     default:
-        return "\'" + string(1, c) + "\'";
+        res.push_back(c);
     }
+
+    if (with_quotes)
+    {
+        res.push_back('\'');
+    }
+
+    return res;
 }
 
 } // namespace

@@ -9,10 +9,11 @@ DFA dfa_from_nfa(NFA);
 class DFABuilder
 {
   private:
-    unordered_map<string, Set<char>> char_map;
+    Set<char> operators;
+    Set<char> special_chars;
 
   public:
-    DFABuilder(unordered_map<string, Set<char>>);
+    DFABuilder(Set<char>, Set<char>);
     ~DFABuilder();
     vector<int> get_all_input_symbols(shared_ptr<TreeNode<int>>);
     DFA dfa_from_nfa(NFA, int &);

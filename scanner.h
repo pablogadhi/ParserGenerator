@@ -43,8 +43,8 @@ class SymbolTable
   public:
     void add_char_set(string, Set<char>);
     void add_keyword(string, string);
-    unordered_map<string, Set<char>> char_sets();
-    unordered_map<string, string> keywords();
+    unordered_map<string, Set<char>> &char_sets();
+    unordered_map<string, string> &keywords();
 };
 
 class Scanner
@@ -70,6 +70,7 @@ class Scanner
     ~Scanner();
 
     void set_finder(DFA);
+    DFA &get_finder();
     SymbolTable &symbols();
     Token scan();
     void next_char();
