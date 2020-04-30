@@ -321,3 +321,6 @@ Set<State> move_set_of_states(Set<State> set, int symbol)
     }
     return Set(result_vec);
 }
+
+template class StateMachine<NFA>;
+template class StateMachine<DFA>;

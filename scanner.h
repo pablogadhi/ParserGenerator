@@ -10,28 +10,26 @@
 
 using namespace std;
 
-class Token
+template <class T> class Token
 {
   private:
     string t_name;
-    string t_val;
+    T t_val;
 
   public:
     Token();
-    Token(string, string);
+    Token(string, T);
     ~Token();
     void set_name(string);
     string name();
-    string value();
-    void add_char(char);
-    bool empty();
+    T value();
     bool operator==(Token &t)
     {
-        return t_val.compare(t.value()) == 0;
+        return this->t_val == t.value();
     }
-    bool operator<(Token &t)
+    bool operator<(Token<T> &t)
     {
-        return t_val.compare(t.value()) > 0;
+        return t_name < t.name();
     }
 };
 
@@ -58,8 +56,8 @@ class Scanner
     string prev_buffer;
     string::iterator forward;
     int lexeme_begin_idx;
-    Token c_token;
-    Token n_token;
+    Token<string> c_token;
+    Token<string> n_token;
     DFA finder = DFA();
     SymbolTable s_table;
     int line = 1;
@@ -76,13 +74,13 @@ class Scanner
     void set_finder(DFA);
     DFA &get_finder();
     SymbolTable &symbols();
-    Token scan();
+    Token<string> scan();
     void next_char();
     char peek_char();
     void ignore_all_blank_chars();
-    Token next_token();
-    Token current();
-    Token look_ahead();
+    Token<string> next_token();
+    Token<string> current();
+    Token<string> look_ahead();
     vector<Error> errors();
 };
 

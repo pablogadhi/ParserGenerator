@@ -54,7 +54,4 @@ class NFA : public StateMachine<NFA>
 Set<State> e_closure(Set<State>);
 Set<State> move_set_of_states(Set<State>, int);
 
-template class StateMachine<NFA>;
-template class StateMachine<DFA>;
-
 #endif

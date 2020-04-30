@@ -95,3 +95,6 @@ template <class T> shared_ptr<TreeNode<T>> TreeNode<T>::find(int name)
     }
     return nullptr;
 }
+
+template class TreeNode<int>;
+template class TreeNode<Set<char>>;

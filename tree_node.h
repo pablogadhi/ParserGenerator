@@ -36,7 +36,4 @@ template <class T> class TreeNode
     shared_ptr<TreeNode<T>> find(int);
 };
 
-template class TreeNode<int>;
-template class TreeNode<Set<char>>;
-
 #endif

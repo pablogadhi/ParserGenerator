@@ -9,8 +9,8 @@ class Parser
   private:
     Scanner &scanner;
     SCoreGenerator generator;
-    Token current_token;
-    vector<Token> token_list;
+    Token<string> current_token;
+    vector<Token<string>> token_list;
     string new_compiler_name;
     SymbolTable new_table;
     unordered_map<string, vector<Set<char>>> token_regex_map;

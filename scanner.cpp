@@ -1,36 +1,26 @@
 #include "scanner.h"
 #include "iostream"
 
-Token::Token()
+template <class T> Token<T>::Token()
 {
 }
 
-Token::Token(string name, string val) : t_name(name), t_val(val)
+template <class T> Token<T>::Token(string name, T val) : t_name(name), t_val(val)
 {
 }
 
-Token::~Token()
+template <class T> Token<T>::~Token()
 {
 }
 
-bool Token::empty()
-{
-    return t_val.empty();
-}
-
-string Token::name()
+template <class T> string Token<T>::name()
 {
     return t_name;
 }
 
-string Token::value()
+template <class T> T Token<T>::value()
 {
     return t_val;
-}
-
-void Token::add_char(char c)
-{
-    t_val.push_back(c);
 }
 
 void SymbolTable::add_char_set(string set_name, Set<char> new_set)
@@ -72,13 +62,41 @@ Scanner::Scanner(string file_name)
     }
 
     // Initialize Character Map
-    s_table.add_char_set("charCh", Set<char>{'\t', ' ', '!', '\"', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
-    s_table.add_char_set("stringCh", Set<char>{'\t', ' ', '!', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
-    s_table.add_char_set("hex", Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'});
-    s_table.add_char_set("attrCh", Set<char>{'\t', '\n', '\r', ' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '=', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
-    s_table.add_char_set("printable", Set<char>{' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
+    s_table.add_char_set("charCh",
+                         Set<char>{'\t', ' ', '!', '\"', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/',
+                                   '0',  '1', '2', '3',  '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
+                                   '@',  'A', 'B', 'C',  'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+                                   'P',  'Q', 'R', 'S',  'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '^', '_', '`', 'a',
+                                   'b',  'c', 'd', 'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+                                   'r',  's', 't', 'u',  'v', 'w', 'x', 'y', 'z', '{', '~'});
+    s_table.add_char_set("stringCh",
+                         Set<char>{'\t', ' ', '!', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+                                   '0',  '1', '2', '3', '4', '5', '6', '7',  '8', '9', ':', ';', '<', '=', '>', '?',
+                                   '@',  'A', 'B', 'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+                                   'P',  'Q', 'R', 'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', '^', '_', '`', 'a',
+                                   'b',  'c', 'd', 'e', 'f', 'g', 'h', 'i',  'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+                                   'r',  's', 't', 'u', 'v', 'w', 'x', 'y',  'z', '{', '~'});
+    s_table.add_char_set("hex",
+                         Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'});
+    s_table.add_char_set("attrCh",
+                         Set<char>{'\t', '\n', '\r', ' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*',  '+', ',',
+                                   '-',  '.',  '/',  '0', '1', '2',  '3', '4', '5', '6', '7',  '8', '9', ':',  ';', '=',
+                                   '?',  '@',  'A',  'B', 'C', 'D',  'E', 'F', 'G', 'H', 'I',  'J', 'K', 'L',  'M', 'N',
+                                   'O',  'P',  'Q',  'R', 'S', 'T',  'U', 'V', 'W', 'X', 'Y',  'Z', '[', '\\', '^', '_',
+                                   '`',  'a',  'b',  'c', 'd', 'e',  'f', 'g', 'h', 'i', 'j',  'k', 'l', 'm',  'n', 'o',
+                                   'p',  'q',  'r',  's', 't', 'u',  'v', 'w', 'x', 'y', 'z',  '{', '~'});
+    s_table.add_char_set("printable",
+                         Set<char>{' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',',  '-', '.', '/',
+                                   '0', '1', '2',  '3', '4', '5', '6', '7',  '8', '9', ':', ';', '<',  '=', '>', '?',
+                                   '@', 'A', 'B',  'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O',
+                                   'P', 'Q', 'R',  'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', '\\', '^', '_', '`',
+                                   'a', 'b', 'c',  'd', 'e', 'f', 'g', 'h',  'i', 'j', 'k', 'l', 'm',  'n', 'o', 'p',
+                                   'q', 'r', 's',  't', 'u', 'v', 'w', 'x',  'y', 'z', '{', '~'});
     s_table.add_char_set("lf", Set<char>{'\n'});
-    s_table.add_char_set("letter", Set<char>{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_'});
+    s_table.add_char_set("letter", Set<char>{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+                                             'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b',
+                                             'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                                             'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_'});
     s_table.add_char_set("tab", Set<char>{'\t'});
     s_table.add_char_set("digit", Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'});
     s_table.add_char_set("cr", Set<char>{'\r'});
@@ -1111,7 +1129,7 @@ char Scanner::peek_char()
     return peeked;
 }
 
-Token Scanner::scan()
+Token<string> Scanner::scan()
 {
     c_token = n_token;
     n_token = next_token();
@@ -1131,7 +1149,7 @@ void Scanner::ignore_all_blank_chars()
     }
 }
 
-Token Scanner::next_token()
+Token<string> Scanner::next_token()
 {
     prev_buffer = current_buffer;
     ignore_all_blank_chars();
@@ -1139,7 +1157,7 @@ Token Scanner::next_token()
     // Handle EOF
     if (forward == current_buffer.end())
     {
-        return Token("<EOF>", string(1, '\0'));
+        return Token<string>("<EOF>", string(1, '\0'));
     }
 
     lexeme_begin_idx = forward - current_buffer.begin();
@@ -1163,7 +1181,7 @@ Token Scanner::next_token()
             error_list.push_back(Error(line, column, "Unexpected char: " + string(1, *forward)));
             finder.reset_movements();
             next_char();
-            return Token("<ERROR>", "");
+            return Token<string>("<ERROR>", "");
         }
         next_char();
     }
@@ -1192,15 +1210,15 @@ Token Scanner::next_token()
     }
 
     finder.reset_movements();
-    return Token(token_name, lexeme_str);
+    return Token<string>(token_name, lexeme_str);
 }
 
-Token Scanner::current()
+Token<string> Scanner::current()
 {
     return c_token;
 }
 
-Token Scanner::look_ahead()
+Token<string> Scanner::look_ahead()
 {
     return n_token;
 }
@@ -1209,3 +1227,6 @@ vector<Error> Scanner::errors()
 {
     return error_list;
 }
+
+template class Token<string>;
+template class Token<Set<char>>;
