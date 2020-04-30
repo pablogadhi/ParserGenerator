@@ -189,6 +189,8 @@ void Parser::set_decl()
             else
             {
                 // TODO Add Error: Set Not Found
+                syn_error();
+                break;
             }
         }
     }
@@ -215,7 +217,10 @@ void Parser::keyword_decl()
         token_regex_map[keyword_name] = keyword_regex;
     }
 
-    expect(".");
+    if (!soft_expect("."))
+    {
+        syn_error();
+    }
 }
 
 void Parser::ignore_decl()
@@ -272,6 +277,11 @@ void Parser::token_decl()
                 {
                     regex.push_back(set);
                 }
+            }
+            else
+            {
+                syn_error();
+                break;
             }
         }
         else if (current_token.name() == "char")
@@ -436,4 +446,13 @@ void Parser::write_scanner()
     frame_file.close();
     header.close();
     cpp_file.close();
+}
+
+void Parser::syn_error()
+{
+    auto prev_token = token_list[token_list.size() - 2];
+    auto error =
+        Error("Syntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")", SYNTACTIC_ERROR);
+    cout << error.value() << endl;
+    cout << "Expected token: (\".\", \'.\')" << endl;
 }

@@ -14,6 +14,7 @@ class Parser
     string new_compiler_name;
     SymbolTable new_table;
     unordered_map<string, vector<Token<Set<char>>>> token_regex_map;
+    vector<Error> syntactic_errors;
 
   public:
     Parser(Scanner &);
@@ -28,6 +29,7 @@ class Parser
     void ignore_decl();
     void write_scanner();
     string compiler_name();
+    void syn_error();
 };
 
 #endif
