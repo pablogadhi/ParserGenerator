@@ -27,20 +27,25 @@ int get_precedence(char c)
     return 0;
 }
 
-bool SCoreGenerator::is_regex_operator(Set<char> set)
+bool SCoreGenerator::is_regex_operator(Token<Set<char>> token)
 {
-    return (intersec_between_sets(set, regex_operators).size() != 0 && set.size() == 1);
+    auto set = token.value();
+    return (intersec_between_sets(set, regex_operators).size() != 0 && set.size() == 1 &&
+            (string(1, set[0]) == token.name() || token.name() == ""));
 }
 
-bool SCoreGenerator::is_special_char(Set<char> set)
+bool SCoreGenerator::is_special_char(Token<Set<char>> token)
 {
-    return (intersec_between_sets(set, special_chars).size() != 0 && set.size() == 1);
+    auto set = token.value();
+    return (intersec_between_sets(set, special_chars).size() != 0 && set.size() == 1 &&
+            string(1, set[0]) == token.name());
 }
 
-vector<Set<char>> SCoreGenerator::infix_to_postfix(vector<Set<char>> infix_regex, function<int(char)> get_precedence)
+vector<Token<Set<char>>> SCoreGenerator::infix_to_postfix(vector<Token<Set<char>>> infix_regex,
+                                                          function<int(char)> get_precedence)
 {
-    stack<Set<char>> char_stack;
-    vector<Set<char>> output;
+    stack<Token<Set<char>>> char_stack;
+    vector<Token<Set<char>>> output;
 
     for (auto &t : infix_regex)
     {
@@ -48,13 +53,13 @@ vector<Set<char>> SCoreGenerator::infix_to_postfix(vector<Set<char>> infix_regex
         {
             output.push_back(t);
         }
-        else if (t.has_item('(') != -1 && t.size() == 1)
+        else if (t.name() == "(")
         {
             char_stack.push(t);
         }
-        else if (t.has_item(')') != -1 && t.size() == 1)
+        else if (t.name() == ")")
         {
-            while (char_stack.top().has_item('(') && t.size() == 1)
+            while (char_stack.top().name() != "(")
             {
                 output.push_back(char_stack.top());
                 char_stack.pop();
@@ -63,7 +68,7 @@ vector<Set<char>> SCoreGenerator::infix_to_postfix(vector<Set<char>> infix_regex
         }
         else if (is_regex_operator(t))
         {
-            while (!char_stack.empty() && get_precedence(t[0]) <= get_precedence(char_stack.top()[0]))
+            while (!char_stack.empty() && get_precedence(t.value()[0]) <= get_precedence(char_stack.top().value()[0]))
             {
                 output.push_back(char_stack.top());
                 char_stack.pop();
@@ -82,10 +87,11 @@ vector<Set<char>> SCoreGenerator::infix_to_postfix(vector<Set<char>> infix_regex
     return output;
 }
 
-TreeNode<int> SCoreGenerator::make_syntax_tree(Set<char> symbol_as_set, int &name_index, vector<TreeNode<int>> children)
+TreeNode<int> SCoreGenerator::make_syntax_tree(Token<Set<char>> symbol_as_set, int &name_index,
+                                               vector<TreeNode<int>> children)
 {
     // TODO Handle symbols with more than one character
-    int symbol = (int)(symbol_as_set[0]);
+    int symbol = (int)(symbol_as_set.value()[0]);
     if (children.size() == 1)
     {
         return TreeNode<int>(-1, symbol, make_shared<TreeNode<int>>(children[0]));
@@ -93,10 +99,10 @@ TreeNode<int> SCoreGenerator::make_syntax_tree(Set<char> symbol_as_set, int &nam
     return TreeNode<int>(-1, symbol, make_shared<TreeNode<int>>(children[0]), make_shared<TreeNode<int>>(children[1]));
 }
 
-TreeNode<int> SCoreGenerator::tree_from_set(Set<char> set, int &name_index)
+TreeNode<int> SCoreGenerator::tree_from_set(Token<Set<char>> token, int &name_index)
 {
     stack<TreeNode<int>> char_stack;
-    for (auto &c : set)
+    for (auto &c : token.value())
     {
         auto right = TreeNode<int>(name_index, (int)c);
         name_index++;
@@ -115,32 +121,28 @@ TreeNode<int> SCoreGenerator::tree_from_set(Set<char> set, int &name_index)
     return char_stack.top();
 }
 
-TreeNode<int> SCoreGenerator::basic_syntax_node_generator(Set<char> symbol, int &name)
+TreeNode<int> SCoreGenerator::basic_syntax_node_generator(Token<Set<char>> symbol, int &name)
 {
     TreeNode<int> node;
-    if (symbol.size() > 1)
+    if (symbol.value().size() > 1)
     {
         node = tree_from_set(symbol, name);
     }
     else
     {
         // TODO Handle symbols with more than one character
-        node = TreeNode<int>(name, (int)(symbol[0]));
+        node = TreeNode<int>(name, (int)(symbol.value()[0]));
         name++;
     }
     return node;
 }
 
-bool is_operator_binary(Set<char> op)
+bool is_operator_binary(Token<Set<char>> op)
 {
-    if (op.size() == 1 && (op[0] == '|' || op[0] == '\0'))
-    {
-        return true;
-    }
-    return false;
+    return (op.name() == "|" || op.name() == "\0");
 }
 
-TreeNode<int> SCoreGenerator::postfix_eval(vector<Set<char>> postfix_expr)
+TreeNode<int> SCoreGenerator::postfix_eval(vector<Token<Set<char>>> postfix_expr)
 {
     stack<TreeNode<int>> m_stack;
     int state_index = 0;
@@ -171,62 +173,30 @@ TreeNode<int> SCoreGenerator::postfix_eval(vector<Set<char>> postfix_expr)
     return m_stack.top();
 }
 
-vector<Set<char>> SCoreGenerator::format_regex(vector<Set<char>> regex)
+vector<Token<Set<char>>> SCoreGenerator::format_regex(vector<Token<Set<char>>> regex)
 {
-    vector<Set<char>> result;
+    vector<Token<Set<char>>> result;
     for (int i = 0; i < regex.size() - 1; i++)
     {
-        Set<char> first = regex[i], second = regex[i + 1];
+        Token<Set<char>> first = regex[i], second = regex[i + 1];
         result.push_back(first);
-        if ((first.size() != 1 || first.has_item('(') == -1) && (second.size() != 1 || second.has_item(')') == -1) &&
-            !is_regex_operator(second) && !is_operator_binary(first))
+        if (first.name() != "(" && second.name() != ")" && !is_regex_operator(second) && !is_operator_binary(first))
         {
-            result.push_back(Set<char>{'\0'});
+            result.push_back(Token<Set<char>>("\0", Set<char>{'\0'}));
         }
     }
     result.push_back(regex[regex.size() - 1]);
     return result;
 }
 
-TreeNode<int> SCoreGenerator::expand_tree(shared_ptr<TreeNode<Set<char>>> root, int &name_index)
-{
-    shared_ptr<TreeNode<int>> left_child, right_child;
-    if (root->left() != nullptr)
-    {
-        auto left = expand_tree(root->left(), name_index);
-        left_child = make_shared<TreeNode<int>>(left);
-    }
-
-    if (root->right() != nullptr)
-    {
-        auto right = expand_tree(root->right(), name_index);
-        right_child = make_shared<TreeNode<int>>(right);
-    }
-
-    TreeNode<int> new_tree;
-    if (root->symbol().size() > 1)
-    {
-        new_tree = tree_from_set(root->symbol(), name_index);
-    }
-    else
-    {
-        // TODO Handle symbols with more than one character
-        new_tree = TreeNode<int>(name_index, (int)(root->symbol()[0]));
-        name_index++;
-        new_tree.set_left(left_child);
-        new_tree.set_right(right_child);
-    }
-    return new_tree;
-}
-
-DFA SCoreGenerator::generate_dfa_finder(unordered_map<string, vector<Set<char>>> all_regex, bool append_operators,
-                                        bool debug)
+DFA SCoreGenerator::generate_dfa_finder(unordered_map<string, vector<Token<Set<char>>>> all_regex,
+                                        bool append_operators, bool debug)
 {
     vector<DFA> regex_dfa;
     auto builder = DFABuilder();
-    auto hashtag = Set<char>{'#'};
-    auto left_p = Set<char>{'('};
-    auto right_p = Set<char>{')'};
+    auto hashtag = Token<Set<char>>("#", Set<char>{'#'});
+    auto left_p = Token<Set<char>>("(", Set<char>{'('});
+    auto right_p = Token<Set<char>>(")", Set<char>{')'});
 
     int state_name = 0;
     int dfa_idx = 0;

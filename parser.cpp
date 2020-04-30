@@ -184,7 +184,7 @@ void Parser::token_decl()
 {
     get();
     auto token_name = current_token.value();
-    vector<Set<char>> regex;
+    vector<Token<Set<char>>> regex;
     expect("=");
     while (scanner.look_ahead().name() != ".")
     {
@@ -194,7 +194,7 @@ void Parser::token_decl()
             // If ident is in char map
             if (new_table.char_sets().find(current_token.value()) != new_table.char_sets().end())
             {
-                regex.push_back(new_table.char_sets()[current_token.value()]);
+                regex.push_back(Token<Set<char>>(current_token.value(), new_table.char_sets()[current_token.value()]));
             }
             // if ident is a previously defined token
             // TODO Handle recursive declarations (probably with productions)
@@ -209,23 +209,23 @@ void Parser::token_decl()
         }
         else if (current_token.name() == "char")
         {
-            regex.push_back(Set<char>{str_to_char(current_token.value())});
+            regex.push_back(Token<Set<char>>("char", Set<char>{str_to_char(current_token.value())}));
         }
         else if (current_token.name() == "string")
         {
             for (auto &c : current_token.value().substr(1, current_token.value().size() - 2))
             {
-                regex.push_back(Set<char>{c});
+                regex.push_back(Token<Set<char>>("char", Set<char>{c}));
             }
         }
         else if (current_token.name() == "{" || current_token.name() == "[")
         {
-            regex.push_back(Set<char>{'('});
+            regex.push_back(Token<Set<char>>("(", Set<char>{'('}));
         }
         else if (current_token.name() == "}" || current_token.name() == "]")
         {
-            regex.push_back(Set<char>{')'});
-            regex.push_back(Set<char>{current_token.value()[0]});
+            regex.push_back(Token<Set<char>>(")", Set<char>{')'}));
+            regex.push_back(Token<Set<char>>(current_token.name(), Set<char>{current_token.value()[0]}));
         }
         else if (current_token.name() == "ANY")
         {
@@ -235,7 +235,7 @@ void Parser::token_decl()
                 ANY = union_between_sets(ANY, set);
             }
             ANY = diff_between_sets(ANY, generator.operators());
-            regex.push_back(ANY);
+            regex.push_back(Token<Set<char>>("ANY", ANY));
         }
         else if (current_token.name() == "EXCEPT")
         {
@@ -247,7 +247,7 @@ void Parser::token_decl()
         }
         else
         {
-            regex.push_back(Set<char>{current_token.value()[0]});
+            regex.push_back(Token<Set<char>>(current_token.name(), Set<char>{current_token.value()[0]}));
         }
     }
     token_regex_map[token_name] = regex;

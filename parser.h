@@ -13,9 +13,7 @@ class Parser
     vector<Token<string>> token_list;
     string new_compiler_name;
     SymbolTable new_table;
-    unordered_map<string, vector<Set<char>>> token_regex_map;
-
-    DFA generate_dfa_finder(vector<pair<string, vector<Set<char>>>>, bool, bool);
+    unordered_map<string, vector<Token<Set<char>>>> token_regex_map;
 
   public:
     Parser(Scanner &);
