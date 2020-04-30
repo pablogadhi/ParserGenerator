@@ -6,20 +6,24 @@ CHARACTERS
 	cr        = '\r'.
 	lf        = '\n'.
 	tab       = '\t'.
+	space 	  = ' '.
 	printable =  ' ' .. '~'.
 	hex       = "0123456789abcdef".
 	stringCh  = ANY - '"' - '\\' - cr - lf.
 	charCh    = ANY - '\'' - '\\' - cr - lf.
 	attrCh	  = ANY - '<' - '>'.
+	semActionCh = ANY - '.' - '(' - ')'.
 
 KEYWORDS
-  COMPILER = "COMPILER".
-  CHARACTERS = "CHARACTERS".
-  KEYWORDS = "KEYWORDS".
-  TOKENS = "TOKENS".
-  END = "END".
-  ANY = "ANY".
-  EXCEPT = "EXCEPT".
+  	COMPILER = "COMPILER".
+  	CHARACTERS = "CHARACTERS".
+  	KEYWORDS = "KEYWORDS".
+  	TOKENS = "TOKENS".
+  	END = "END".
+  	ANY = "ANY".
+  	EXCEPT = "EXCEPT".
+  	IGNORE = "IGNORE".
+  	PRODUCTIONS = "PRODUCTIONS".
 
 TOKENS
 	ident     = letter { letter | digit }.
@@ -27,5 +31,10 @@ TOKENS
 	string    = '"' { stringCh | '\\' printable } '"'.
 	char      = ('\'' ( charCh | '\\' printable { hex } ) '\'') | ( "CHR"'(' number ')' ).
 	attr 	  = '<' { attrCh } '>'.
+	semAction= "(." { semActionCh } ".)".
+
+IGNORE cr + lf + tab + space
+
+PRODUCTIONS
 
 END Coco.

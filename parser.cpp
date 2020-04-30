@@ -44,6 +44,12 @@ void Parser::get()
 
 void Parser::expect(string str)
 {
+    // Refactor this code to be more efficient
+    if (current_token.name() == str)
+    {
+        return;
+    }
+
     while (true)
     {
         get();
@@ -56,6 +62,12 @@ void Parser::expect(string str)
             // TODO Add Syntatic Error to error list
         }
     }
+}
+
+bool Parser::soft_expect(string str)
+{
+    get();
+    return current_token.name() == str;
 }
 
 void Parser::parse()
@@ -88,11 +100,18 @@ void Parser::parse()
         token_decl();
     }
 
+    // Ignore
+    if (soft_expect("IGNORE"))
+    {
+        ignore_decl();
+    }
+
     // Productions
+    expect("PRODUCTIONS");
 
     // END
-    expect("END");
-    expect("<EOF>");
+    // expect("END");
+    // expect("<EOF>");
 
     int i = 0;
 }
@@ -117,7 +136,15 @@ void Parser::set_decl()
         }
         else if (current_token.name() == "char")
         {
-            single_op_func(str_to_char(current_token.value()));
+            if (current_token.value().size() >= 5 && current_token.value().substr(0, 3) == "CHR")
+            {
+                auto number = current_token.value().substr(4, current_token.value().size() - 5);
+                single_op_func((char)stoi(number));
+            }
+            else
+            {
+                single_op_func(str_to_char(current_token.value()));
+            }
         }
         else if (current_token.name() == "+")
         {
@@ -177,7 +204,47 @@ void Parser::keyword_decl()
     expect("string");
     auto real_str = current_token.value().substr(1, current_token.value().size() - 2);
     new_table.add_keyword(keyword_name, real_str);
+
+    if (new_compiler_name != "Coco")
+    {
+        auto keyword_regex = vector<Token<Set<char>>>();
+        for (auto &c : real_str)
+        {
+            keyword_regex.push_back(Token<Set<char>>("char", Set<char>{c}));
+        }
+        token_regex_map[keyword_name] = keyword_regex;
+    }
+
     expect(".");
+}
+
+void Parser::ignore_decl()
+{
+    get();
+    auto ignore_set = Set<char>();
+    function<void(Set<char>)> current_op = [&](Set<char> set) { ignore_set = union_between_sets(ignore_set, set); };
+    while (true)
+    {
+        if (current_token.name() == "ident")
+        {
+            // TODO Handle unknown sets
+            current_op(new_table.char_sets()[current_token.value()]);
+        }
+        else if (current_token.name() == "+")
+        {
+            current_op = [&](Set<char> set) { ignore_set = union_between_sets(ignore_set, set); };
+        }
+        else if (current_token.name() == "-")
+        {
+            current_op = [&](Set<char> set) { ignore_set = diff_between_sets(ignore_set, set); };
+        }
+        else
+        {
+            break;
+        }
+        get();
+    }
+    new_table.char_sets()["<IGNORE>"] = ignore_set;
 }
 
 void Parser::token_decl()
@@ -332,7 +399,7 @@ void Parser::write_scanner()
 
     // Generate DFA declaration
     auto char_sets = new_table.char_sets();
-    auto future_dfa = generator.generate_dfa_finder(token_regex_map, new_compiler_name == "Coco", true);
+    auto future_dfa = generator.generate_dfa_finder(token_regex_map, new_compiler_name == "Coco", false);
     future_dfa.draw_machine("Generated_DFA");
     auto all_states = future_dfa.flatten();
     for (auto &state : all_states)

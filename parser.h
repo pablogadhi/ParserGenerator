@@ -21,9 +21,11 @@ class Parser
     void parse();
     void get();
     void expect(string);
+    bool soft_expect(string);
     void set_decl();
     void keyword_decl();
     void token_decl();
+    void ignore_decl();
     void write_scanner();
     string compiler_name();
 };

@@ -15,28 +15,26 @@ scanner.h Specification
 
 using namespace std;
 
-class Token
+template <class T> class Token
 {
   private:
     string t_name;
-    string t_val;
+    T t_val;
 
   public:
     Token();
-    Token(string, string);
+    Token(string, T);
     ~Token();
     void set_name(string);
     string name();
-    string value();
-    void add_char(char);
-    bool empty();
+    T value();
     bool operator==(Token &t)
     {
-        return t_val.compare(t.value()) == 0;
+        return this->t_val == t.value();
     }
-    bool operator<(Token &t)
+    bool operator<(Token<T> &t)
     {
-        return t_val.compare(t.value()) > 0;
+        return t_name < t.name();
     }
 };
 
@@ -63,8 +61,8 @@ class Scanner
     string prev_buffer;
     string::iterator forward;
     int lexeme_begin_idx;
-    Token c_token;
-    Token n_token;
+    Token<string> c_token;
+    Token<string> n_token;
     DFA finder = DFA();
     SymbolTable s_table;
     int line = 1;
@@ -81,13 +79,13 @@ class Scanner
     void set_finder(DFA);
     DFA &get_finder();
     SymbolTable &symbols();
-    Token scan();
+    Token<string> scan();
     void next_char();
     char peek_char();
     void ignore_all_blank_chars();
-    Token next_token();
-    Token current();
-    Token look_ahead();
+    Token<string> next_token();
+    Token<string> current();
+    Token<string> look_ahead();
     vector<Error> errors();
 };
 
@@ -100,38 +98,29 @@ scanner.cpp Specification
 
 -->begin
 #include "scanner.h"
-#include "iostream"
+#include "utils.h"
+#include <iostream>
 
-Token::Token()
+template <class T> Token<T>::Token()
 {
 }
 
-Token::Token(string name, string val) : t_name(name), t_val(val)
+template <class T> Token<T>::Token(string name, T val) : t_name(name), t_val(val)
 {
 }
 
-Token::~Token()
+template <class T> Token<T>::~Token()
 {
 }
 
-bool Token::empty()
-{
-    return t_val.empty();
-}
-
-string Token::name()
+template <class T> string Token<T>::name()
 {
     return t_name;
 }
 
-string Token::value()
+template <class T> T Token<T>::value()
 {
     return t_val;
-}
-
-void Token::add_char(char c)
-{
-    t_val.push_back(c);
 }
 
 void SymbolTable::add_char_set(string set_name, Set<char> new_set)
@@ -217,6 +206,12 @@ void Scanner::read_into_string_buffer(string &out_buffer)
 
 void Scanner::next_char()
 {
+    if (*forward == '\n')
+    {
+        line++;
+        column = 1;
+    }
+
     forward++;
     column++;
     if (forward == current_buffer.end())
@@ -256,7 +251,7 @@ char Scanner::peek_char()
     return peeked;
 }
 
-Token Scanner::scan()
+Token<string> Scanner::scan()
 {
     c_token = n_token;
     n_token = next_token();
@@ -265,18 +260,16 @@ Token Scanner::scan()
 
 void Scanner::ignore_all_blank_chars()
 {
-    while (*forward == ' ' || *forward == '\t' || *forward == '\n' || *forward == '\r')
+    if (s_table.char_sets().find("<IGNORE>") != s_table.char_sets().end())
     {
-        if (*forward == '\n')
+        while (s_table.char_sets()["<IGNORE>"].has_item(*forward) != -1)
         {
-            line++;
-            column = 1;
+            next_char();
         }
-        next_char();
     }
 }
 
-Token Scanner::next_token()
+Token<string> Scanner::next_token()
 {
     prev_buffer = current_buffer;
     ignore_all_blank_chars();
@@ -284,19 +277,17 @@ Token Scanner::next_token()
     // Handle EOF
     if (forward == current_buffer.end())
     {
-        return Token("<EOF>", string(1, '\0'));
+        return Token<string>("<EOF>", string(1, '\0'));
     }
 
     lexeme_begin_idx = forward - current_buffer.begin();
 
     // Move until an accepting state is found
     bool accepting_found = false;
-    State peeked_state = State();
-    // TODO Change second criteria to "Couldn't go forward"
-    while (!accepting_found || peeked_state.is_accepting())
+    State peeked_state = State(-2);
+    while (!accepting_found || peeked_state.name() != -1)
     {
         finder.move(*forward);
-        // TODO handle unknown characters
         if (finder.current().is_accepting())
         {
             accepting_found = true;
@@ -305,10 +296,10 @@ Token Scanner::next_token()
         }
         else if (finder.current().name() == -1)
         {
-            error_list.push_back(Error(line, column, "Unexpected char: " + string(1, *forward)));
+            error_list.push_back(Error(line, column, "Unexpected char: " + char_to_str(*forward, true)));
             finder.reset_movements();
             next_char();
-            return Token("<ERROR>", "");
+            return Token<string>("<ERROR>", "");
         }
         next_char();
     }
@@ -337,15 +328,15 @@ Token Scanner::next_token()
     }
 
     finder.reset_movements();
-    return Token(token_name, lexeme_str);
+    return Token<string>(token_name, lexeme_str);
 }
 
-Token Scanner::current()
+Token<string> Scanner::current()
 {
     return c_token;
 }
 
-Token Scanner::look_ahead()
+Token<string> Scanner::look_ahead()
 {
     return n_token;
 }
@@ -354,4 +345,7 @@ vector<Error> Scanner::errors()
 {
     return error_list;
 }
+
+template class Token<string>;
+template class Token<Set<char>>;
 -->end
