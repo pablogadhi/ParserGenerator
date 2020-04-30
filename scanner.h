@@ -1,6 +1,7 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
+#include "error.h"
 #include "state_machine.h"
 #include <fstream>
 #include <string>
@@ -61,6 +62,9 @@ class Scanner
     Token n_token;
     DFA finder = DFA();
     SymbolTable s_table;
+    int line = 1;
+    int column = 1;
+    vector<Error> error_list;
 
     void read_into_string_buffer(string &);
 
@@ -79,6 +83,7 @@ class Scanner
     Token next_token();
     Token current();
     Token look_ahead();
+    vector<Error> errors();
 };
 
 #endif

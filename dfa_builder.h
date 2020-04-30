@@ -8,12 +8,8 @@ DFA dfa_from_nfa(NFA);
 
 class DFABuilder
 {
-  private:
-    Set<char> operators;
-    Set<char> special_chars;
-
   public:
-    DFABuilder(Set<char>, Set<char>);
+    DFABuilder();
     ~DFABuilder();
     vector<int> get_all_input_symbols(shared_ptr<TreeNode<int>>);
     DFA dfa_from_nfa(NFA, int &);

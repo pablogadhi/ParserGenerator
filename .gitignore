@@ -43,3 +43,6 @@ build/
 
 # Coco
 Coco/
+
+# Old Versions
+*.old

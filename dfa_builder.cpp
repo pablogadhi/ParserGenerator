@@ -63,7 +63,7 @@ DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran,
     return DFA(state_ptrs[0], state_ptrs[state_ptrs.size() - 1]);
 }
 
-DFABuilder::DFABuilder(Set<char> op_set, Set<char> special_set) : operators(op_set), special_chars(special_set)
+DFABuilder::DFABuilder()
 {
 }
 
@@ -349,7 +349,7 @@ vector<int> DFABuilder::get_all_input_symbols(shared_ptr<TreeNode<int>> root_ptr
     for (auto &node : root_ptr->flatten())
     {
         auto c = node->symbol();
-        if (operators.has_item(c) == -1 && special_chars.has_item(c) == -1 && !is_item_in_vector(c, symbols))
+        if (!is_item_in_vector(c, symbols))
         {
             symbols.push_back(c);
         }

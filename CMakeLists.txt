@@ -8,7 +8,7 @@ include(CTest)
 enable_testing()
 
 link_libraries(gvc cgraph)
-add_executable(LexerGenerator lexer_generator.cpp nfa_builder.cpp dfa_builder.cpp state_machine.cpp state.cpp utils.cpp tree_node.cpp simulation.cpp scanner.cpp parser.cpp)
+add_executable(LexerGenerator lexer_generator.cpp nfa_builder.cpp dfa_builder.cpp state_machine.cpp state.cpp utils.cpp tree_node.cpp simulation.cpp scanner.cpp parser.cpp s_core_generator.cpp error.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

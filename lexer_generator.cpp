@@ -8,7 +8,7 @@ using namespace std;
 using namespace filesystem;
 
 const vector<path> files_to_copy = {"set.h",      "state.h", "state.cpp", "state_machine.h", "state_machine.cpp",
-                                    "main.frame", "utils.h"};
+                                    "main.frame", "utils.h", "error.h",   "error.cpp"};
 
 int main(int argc, char const *argv[])
 {
@@ -22,6 +22,17 @@ int main(int argc, char const *argv[])
     auto parser = Parser(scanner);
 
     parser.parse();
+    // Handle Errors
+    if (scanner.errors().size() != 0)
+    {
+        for (auto &error : scanner.errors())
+        {
+            cout << "LEXICAL ERROR found in line " << error.line() << " and column " << error.column() << ": "
+                 << error.value() << endl;
+        }
+        return -1;
+    }
+
     auto compiler_name = parser.compiler_name();
     auto compiler_path = current_path() / compiler_name;
     create_directory(compiler_path);
@@ -66,6 +77,8 @@ int main(int argc, char const *argv[])
 
     cmake_file.close();
     cmake_template.close();
+
+    cout << "New scanner generated!" << endl;
 
     return 0;
 }

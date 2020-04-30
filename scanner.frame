@@ -6,6 +6,7 @@ scanner.h Specification
 #ifndef SCANNER_H
 #define SCANNER_H
 
+#include "error.h"
 #include "state_machine.h"
 #include <fstream>
 #include <string>
@@ -48,8 +49,8 @@ class SymbolTable
   public:
     void add_char_set(string, Set<char>);
     void add_keyword(string, string);
-    unordered_map<string, Set<char>> char_sets();
-    unordered_map<string, string> keywords();
+    unordered_map<string, Set<char>> &char_sets();
+    unordered_map<string, string> &keywords();
 };
 
 class Scanner
@@ -66,6 +67,9 @@ class Scanner
     Token n_token;
     DFA finder = DFA();
     SymbolTable s_table;
+    int line = 1;
+    int column = 1;
+    vector<Error> error_list;
 
     void read_into_string_buffer(string &);
 
@@ -84,6 +88,7 @@ class Scanner
     Token next_token();
     Token current();
     Token look_ahead();
+    vector<Error> errors();
 };
 
 #endif
@@ -133,17 +138,25 @@ void SymbolTable::add_char_set(string set_name, Set<char> new_set)
 {
     char_set_map[set_name] = new_set;
 }
+
 void SymbolTable::add_keyword(string name, string new_keyword)
 {
     keywords_map[name] = new_keyword;
 }
-unordered_map<string, Set<char>> SymbolTable::char_sets()
+
+unordered_map<string, Set<char>> &SymbolTable::char_sets()
 {
     return char_set_map;
 }
-unordered_map<string, string> SymbolTable::keywords()
+
+unordered_map<string, string> &SymbolTable::keywords()
 {
     return keywords_map;
+}
+
+SymbolTable &Scanner::symbols()
+{
+    return s_table;
 }
 
 Scanner::Scanner()
@@ -205,6 +218,7 @@ void Scanner::read_into_string_buffer(string &out_buffer)
 void Scanner::next_char()
 {
     forward++;
+    column++;
     if (forward == current_buffer.end())
     {
         if (file_buffer.eof())
@@ -253,6 +267,11 @@ void Scanner::ignore_all_blank_chars()
 {
     while (*forward == ' ' || *forward == '\t' || *forward == '\n' || *forward == '\r')
     {
+        if (*forward == '\n')
+        {
+            line++;
+            column = 1;
+        }
         next_char();
     }
 }
@@ -265,7 +284,7 @@ Token Scanner::next_token()
     // Handle EOF
     if (forward == current_buffer.end())
     {
-        return Token("EOF", string(1, '\0'));
+        return Token("<EOF>", string(1, '\0'));
     }
 
     lexeme_begin_idx = forward - current_buffer.begin();
@@ -283,6 +302,13 @@ Token Scanner::next_token()
             accepting_found = true;
             char peeked_c = peek_char();
             peeked_state = finder.peek_move(peeked_c);
+        }
+        else if (finder.current().name() == -1)
+        {
+            error_list.push_back(Error(line, column, "Unexpected char: " + string(1, *forward)));
+            finder.reset_movements();
+            next_char();
+            return Token("<ERROR>", "");
         }
         next_char();
     }
@@ -324,8 +350,8 @@ Token Scanner::look_ahead()
     return n_token;
 }
 
-SymbolTable &Scanner::symbols()
+vector<Error> Scanner::errors()
 {
-    return s_table;
+    return error_list;
 }
 -->end

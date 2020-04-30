@@ -13,11 +13,22 @@ int main(int argc, char const *argv[])
 
     auto scanner = Scanner(argv[1]);
     scanner.get_finder().draw_machine("Scanner_DFA");
-    auto token = Token();
-    while (token.name() != "EOF")
+    auto token = scanner.scan();
+    int error_idx = 0;
+    while (token.name() != "<EOF>")
     {
         token = scanner.scan();
-        cout << "(" << token.name() << ", " << token.value() << ")" << endl;
+        if(token.name() == "<ERROR>")
+        {
+            auto error = scanner.errors()[error_idx];
+            cout << "LEXICAL ERROR found in line " << error.line() << " and column " << error.column() << ": "
+                 << error.value() << endl;
+            error_idx++;
+        }
+        else
+        {
+            cout << "(" << token.name() << ", " << token.value() << ")" << endl;
+        }
     }
 
     return 0;

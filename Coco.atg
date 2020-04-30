@@ -10,6 +10,7 @@ CHARACTERS
 	hex       = "0123456789abcdef".
 	stringCh  = ANY - '"' - '\\' - cr - lf.
 	charCh    = ANY - '\'' - '\\' - cr - lf.
+	attrCh	  = ANY - '<' - '>'.
 
 KEYWORDS
   COMPILER = "COMPILER".
@@ -18,11 +19,13 @@ KEYWORDS
   TOKENS = "TOKENS".
   END = "END".
   ANY = "ANY".
+  EXCEPT = "EXCEPT".
 
 TOKENS
 	ident     = letter { letter | digit }.
 	number    = digit { digit }.
 	string    = '"' { stringCh | '\\' printable } '"'.
-	char      = '\'' ( charCh | '\\' printable { hex } ) '\''.
+	char      = ('\'' ( charCh | '\\' printable { hex } ) '\'') | ( "CHR"'(' number ')' ).
+	attr 	  = '<' { attrCh } '>'.
 
 END Coco.
