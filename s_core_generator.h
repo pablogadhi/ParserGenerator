@@ -28,7 +28,7 @@ class SCoreGenerator
   public:
     SCoreGenerator();
     ~SCoreGenerator();
-    DFA generate_dfa_finder(unordered_map<string, vector<Token<Set<char>>>>, bool append_operators = false,
+    DFA generate_dfa_finder(unordered_map<string, pair<vector<Token<Set<char>>>, bool>>, bool append_operators = false,
                             bool debug = false);
     Set<char> operators();
 };

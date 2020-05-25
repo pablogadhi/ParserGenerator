@@ -12,7 +12,6 @@ CHARACTERS
 	stringCh  = ANY - '"' - '\\' - cr - lf.
 	charCh    = ANY - '\'' - '\\' - cr - lf.
 	attrCh	  = ANY - '<' - '>'.
-	semActionCh = ANY - '.' - '(' - ')'.
 
 KEYWORDS
   	COMPILER = "COMPILER".
@@ -24,6 +23,7 @@ KEYWORDS
   	EXCEPT = "EXCEPT".
   	IGNORE = "IGNORE".
   	PRODUCTIONS = "PRODUCTIONS".
+  	NONRECURSIVE = "NONRECURSIVE".
 
 TOKENS
 	ident     = letter { letter | digit }.
@@ -31,7 +31,7 @@ TOKENS
 	string    = '"' { stringCh | '\\' printable } '"'.
 	char      = ('\'' ( charCh | '\\' printable { hex } ) '\'') | ( "CHR"'(' number ')' ).
 	attr 	  = '<' { attrCh } '>'.
-	semAction= "(." { semActionCh } ".)".
+	semAction = "(." { ANY } ".)" NONRECURSIVE.
 
 IGNORE cr + lf + tab + space
 

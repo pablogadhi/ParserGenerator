@@ -189,7 +189,7 @@ vector<Token<Set<char>>> SCoreGenerator::format_regex(vector<Token<Set<char>>> r
     return result;
 }
 
-DFA SCoreGenerator::generate_dfa_finder(unordered_map<string, vector<Token<Set<char>>>> all_regex,
+DFA SCoreGenerator::generate_dfa_finder(unordered_map<string, pair<vector<Token<Set<char>>>, bool>> all_regex,
                                         bool append_operators, bool debug)
 {
     vector<DFA> regex_dfa;
@@ -200,8 +200,9 @@ DFA SCoreGenerator::generate_dfa_finder(unordered_map<string, vector<Token<Set<c
 
     int state_name = 0;
     int dfa_idx = 0;
-    for (auto &[r_name, regex] : all_regex)
+    for (auto &[r_name, regex_info] : all_regex)
     {
+        auto regex = regex_info.first;
         regex.insert(regex.begin(), left_p);
         regex.push_back(right_p);
         regex.push_back(hashtag);
@@ -210,6 +211,15 @@ DFA SCoreGenerator::generate_dfa_finder(unordered_map<string, vector<Token<Set<c
         auto postfix_regex = infix_to_postfix(formated_regex, get_precedence);
         auto syntax_tree = postfix_eval(postfix_regex);
         auto dfa = builder.dfa_from_syntax_tree(syntax_tree, state_name, r_name);
+
+        if (regex_info.second)
+        {
+            for (auto &state : dfa.start()->get_t_functions())
+            {
+                state.second->set_non_recursive_flag(true);
+            }
+        }
+
         string d_name = "DFA_" + to_string(dfa_idx);
         if (debug)
         {

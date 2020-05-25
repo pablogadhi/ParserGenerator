@@ -28,6 +28,7 @@ class DFA : public StateMachine<DFA>
 {
   private:
     State current_state;
+    bool non_recursive;
 
   public:
     DFA();
@@ -36,6 +37,7 @@ class DFA : public StateMachine<DFA>
     State peek_move(char);
     void reset_movements();
     State current();
+    bool is_path_non_recursive();
 };
 
 class NFA : public StateMachine<NFA>

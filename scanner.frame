@@ -291,8 +291,14 @@ Token<string> Scanner::next_token()
         if (finder.current().is_accepting())
         {
             accepting_found = true;
-            char peeked_c = peek_char();
-            peeked_state = finder.peek_move(peeked_c);
+            if (finder.is_path_non_recursive())
+            {
+                peeked_state = State();
+            }
+            else
+            {
+                peeked_state = finder.peek_move(peek_char());
+            }
         }
         else if (finder.current().name() == -1)
         {

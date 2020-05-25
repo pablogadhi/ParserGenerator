@@ -14,12 +14,13 @@ class State
     vector<pair<int, shared_ptr<State>>> t_functions;
     int s_name = -1;
     bool s_is_accepting = false;
-    string s_ref_name; // Name of the parent StateMachine
+    string s_ref_name;                 // Name of the parent StateMachine
+    bool set_machine_as_non_r = false; // Flag for setting a StateMachine as non recursive when passing through
 
   public:
     State(int, vector<pair<int, shared_ptr<State>>>);
     State(int);
-    State(int, bool, string);
+    State(int, bool, bool, string);
     State();
     void set_t_functions(vector<pair<int, shared_ptr<State>>>);
     vector<pair<int, shared_ptr<State>>> get_t_functions();
@@ -30,6 +31,8 @@ class State
     bool is_accepting();
     void set_reference_name(string);
     string reference_name();
+    void set_non_recursive_flag(bool);
+    bool start_non_recursive_path();
     Set<State> next_e_states();
     Set<State> move(int);
     bool operator==(const State &s)

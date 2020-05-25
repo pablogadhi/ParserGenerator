@@ -14,7 +14,8 @@ State::State(int name, vector<pair<int, shared_ptr<State>>> t_functions) : s_nam
 {
 }
 
-State::State(int name, bool accepting, string ref) : s_name(name), s_is_accepting(accepting), s_ref_name(ref)
+State::State(int name, bool accepting, bool start_non_r_path, string ref)
+    : s_name(name), s_is_accepting(accepting), s_ref_name(ref), set_machine_as_non_r(start_non_r_path)
 {
 }
 
@@ -61,6 +62,16 @@ void State::set_reference_name(string name)
 string State::reference_name()
 {
     return s_ref_name;
+}
+
+void State::set_non_recursive_flag(bool flag)
+{
+    set_machine_as_non_r = flag;
+}
+
+bool State::start_non_recursive_path()
+{
+    return set_machine_as_non_r;
 }
 
 Set<State> State::next_e_states()

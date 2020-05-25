@@ -214,7 +214,7 @@ void Parser::keyword_decl()
         {
             keyword_regex.push_back(Token<Set<char>>("char", Set<char>{c}));
         }
-        token_regex_map[keyword_name] = keyword_regex;
+        token_regex_map[keyword_name] = make_pair(keyword_regex, false);
     }
 
     if (!soft_expect("."))
@@ -257,6 +257,7 @@ void Parser::token_decl()
     get();
     auto token_name = current_token.value();
     vector<Token<Set<char>>> regex;
+    bool is_non_recursive = false;
     expect("=");
     while (scanner.look_ahead().name() != ".")
     {
@@ -269,11 +270,11 @@ void Parser::token_decl()
                 regex.push_back(Token<Set<char>>(current_token.value(), new_table.char_sets()[current_token.value()]));
             }
             // if ident is a previously defined token
-            // TODO Handle recursive declarations (probably with productions)
+            // TODO Handle recursive declarations
             else if (token_regex_map.find(current_token.value()) != token_regex_map.end())
             {
                 auto prev_regex = token_regex_map[current_token.value()];
-                for (auto &set : prev_regex)
+                for (auto &set : prev_regex.first)
                 {
                     regex.push_back(set);
                 }
@@ -322,12 +323,16 @@ void Parser::token_decl()
             }
             break;
         }
+        else if (current_token.name() == "NONRECURSIVE")
+        {
+            is_non_recursive = true;
+        }
         else
         {
             regex.push_back(Token<Set<char>>(current_token.name(), Set<char>{current_token.value()[0]}));
         }
     }
-    token_regex_map[token_name] = regex;
+    token_regex_map[token_name] = make_pair(regex, is_non_recursive);
     get();
 }
 
@@ -417,8 +422,9 @@ void Parser::write_scanner()
         auto state_name = to_string(state->name());
         auto is_accepting = to_string(state->is_accepting());
         auto ref_name = state->reference_name();
-        cpp_file << "    auto state_" + state_name + " = State(" + state_name + ", " + is_accepting + ", \"" +
-                        ref_name + "\");"
+        auto non_r_path = to_string(state->start_non_recursive_path());
+        cpp_file << "    auto state_" + state_name + " = State(" + state_name + ", " + is_accepting + ", " +
+                        non_r_path + ", \"" + ref_name + "\");"
                  << endl;
         cpp_file << "    state_ptrs[" + state_name + "] = make_shared<State>(state_" + state_name + ");" << endl;
     }

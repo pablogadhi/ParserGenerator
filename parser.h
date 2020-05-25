@@ -13,7 +13,7 @@ class Parser
     vector<Token<string>> token_list;
     string new_compiler_name;
     SymbolTable new_table;
-    unordered_map<string, vector<Token<Set<char>>>> token_regex_map;
+    unordered_map<string, pair<vector<Token<Set<char>>>, bool>> token_regex_map;
     vector<Error> syntactic_errors;
 
   public:

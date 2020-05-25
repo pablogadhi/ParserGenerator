@@ -27,7 +27,7 @@ template <class T> Set<Set<T>> mark_state(Set<Set<T>> set, Set<T> state_to_mark)
 template <class T>
 DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran,
                              function<int(Set<T>, int)> acceptance_check, int accept_criteria,
-                             function<string(Set<T>, int)> ref_func)
+                             function<string(Set<T>, int)> ref_func, function<bool(Set<T>)> non_recursive_flag)
 {
     Set<State> created_states;
     vector<shared_ptr<State>> state_ptrs;
@@ -47,6 +47,9 @@ DFA machine_from_transitions(vector<pair<pair<Set<T>, int>, Set<T>>> d_tran,
                     new_state.set_as_accepting(true);
                     new_state.set_reference_name(ref_func(states_in_tran[i], a_index));
                 }
+
+                new_state.set_non_recursive_flag(non_recursive_flag(states_in_tran[i]));
+
                 created_states.add(new_state);
                 indices[i] = created_states.size() - 1;
                 state_ptrs.push_back(make_shared<State>(created_states[indices[i]]));
@@ -88,6 +91,18 @@ string get_ref_name_from_set(Set<State> set, int accept_index)
     return set[accept_index].reference_name();
 }
 
+bool has_set_non_recursive_flag(Set<State> set)
+{
+    for (auto &state : set)
+    {
+        if (state.start_non_recursive_path())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 DFA DFABuilder::dfa_from_nfa(NFA nfa, int &name_index)
 {
     Set<Set<State>> d_states;
@@ -125,7 +140,8 @@ DFA DFABuilder::dfa_from_nfa(NFA nfa, int &name_index)
         unmarked_states = get_unmarked_states<State>(d_states);
     }
 
-    return machine_from_transitions<State>(d_tran, is_set_acceptance, 0, get_ref_name_from_set);
+    return machine_from_transitions<State>(d_tran, is_set_acceptance, 0, get_ref_name_from_set,
+                                           has_set_non_recursive_flag);
 }
 
 void nullable(shared_ptr<TreeNode<int>> node)
@@ -340,7 +356,8 @@ DFA DFABuilder::dfa_from_syntax_tree(TreeNode<int> root, int &name_index, string
 
     auto sharp_pos = root_ptr->right()->name();
     function<string(Set<int>, int)> ref_func = [=](auto a, auto b) { return ref_name; };
-    return machine_from_transitions<int>(d_tran, has_set_sharp_node, sharp_pos, ref_func);
+    function<bool(Set<int>)> non_rec_func = [](auto a) { return false; };
+    return machine_from_transitions<int>(d_tran, has_set_sharp_node, sharp_pos, ref_func, non_rec_func);
 }
 
 vector<int> DFABuilder::get_all_input_symbols(shared_ptr<TreeNode<int>> root_ptr)

@@ -44,5 +44,9 @@ build/
 # Coco
 Coco/
 
+# COCOL files, except for the main one
+*.ATG
+!Coco.atg
+
 # Old Versions
 *.old

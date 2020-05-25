@@ -231,6 +231,10 @@ DFA::DFA(shared_ptr<State> start_ptr, shared_ptr<State> end_ptr)
 
 void DFA::move(char c)
 {
+    if (current_state.start_non_recursive_path())
+    {
+        non_recursive = true;
+    }
     current_state = peek_move(c);
 }
 
@@ -240,9 +244,7 @@ State DFA::peek_move(char c)
     if (movement.size() != 1)
     {
         // throw std::logic_error("Lexical Error! Failed to move forward!");
-        auto empty_state = State();
-        empty_state.set_as_accepting(false);
-        return empty_state;
+        return State();
     }
     return movement[0];
 }
@@ -250,11 +252,17 @@ State DFA::peek_move(char c)
 void DFA::reset_movements()
 {
     current_state = *starting_state;
+    non_recursive = false;
 }
 
 State DFA::current()
 {
     return current_state;
+}
+
+bool DFA::is_path_non_recursive()
+{
+    return non_recursive;
 }
 
 NFA::NFA()
