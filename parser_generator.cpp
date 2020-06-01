@@ -66,7 +66,7 @@ int main(int argc, char const *argv[])
         }
     }
 
-    compile_line = compile_line + "scanner.cpp)";
+    compile_line = compile_line + "scanner.cpp parser.cpp)";
     cmake_file << compile_line << endl;
 
     while (!cmake_template.eof())
@@ -78,7 +78,7 @@ int main(int argc, char const *argv[])
     cmake_file.close();
     cmake_template.close();
 
-    cout << "New scanner generated!" << endl;
+    cout << "A new scanner and parser were generated!" << endl;
 
     return 0;
 }

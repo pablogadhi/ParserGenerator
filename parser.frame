@@ -1,0 +1,127 @@
+/*----------------------------------------------------------------------
+parser.h Specification
+-----------------------------------------------------------------------*/
+
+-->begin
+#ifndef PARSER_H
+#define PARSER_H
+
+#include "s_core_generator.h"
+#include "scanner.h"
+
+class Parser
+{
+  private:
+    Scanner &scanner;
+    SCoreGenerator generator;
+    Token<string> current_token;
+    vector<Token<string>> token_list;
+    string new_compiler_name;
+    SymbolTable new_table;
+    unordered_map<string, pair<vector<Token<Set<char>>>, bool>> token_regex_map;
+    vector<Error> syntactic_errors;
+
+  public:
+    Parser(Scanner &);
+    ~Parser();
+    void parse();
+    void get();
+    Token<string> last_token();
+    void expect(string);
+    bool soft_expect(string);
+-->prod_declarations
+    string compiler_name();
+    void syn_error();
+};
+
+#endif
+-->implementation
+
+/*----------------------------------------------------------------------
+parser.cpp Specification
+-----------------------------------------------------------------------*/
+
+-->begin
+#include "parser.h"
+#include "utils.h"
+#include <iostream>
+
+Parser::Parser(Scanner &sc) : scanner(sc)
+{
+    scanner.get_finder().draw_machine("Scanner_DFA");
+    scanner.scan();
+}
+
+Parser::~Parser()
+{
+}
+
+void Parser::get()
+{
+    auto token_to_be = scanner.scan();
+    if (token_to_be.name() != "<ERROR>")
+    {
+        current_token = token_to_be;
+        token_list.push_back(current_token);
+    }
+    else
+    {
+        get();
+    }
+}
+
+Token<string> Parser::last_token()
+{
+    return *(token_list.end() - 2);
+}
+
+void Parser::expect(string str)
+{
+    // Refactor this code to be more efficient
+    if (current_token.name() == str)
+    {
+        return;
+    }
+
+    while (true)
+    {
+        get();
+        if (current_token.name() == str || current_token.name() == "<EOF>")
+        {
+            break;
+        }
+        else
+        {
+            // TODO Add Syntatic Error to error list
+        }
+    }
+}
+
+bool Parser::soft_expect(string str)
+{
+    get();
+    return current_token.name() == str;
+}
+
+-->prod_implementations
+
+void Parser::parse()
+{
+    get();
+-->first_prod
+}
+
+string Parser::compiler_name()
+{
+    return new_compiler_name;
+}
+
+void Parser::syn_error()
+{
+    auto prev_token = token_list[token_list.size() - 2];
+    auto error =
+        Error("Syntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")", SYNTACTIC_ERROR);
+    cout << error.value() << endl;
+    cout << "Expected token: (\".\", \'.\')" << endl;
+}
+-->end

@@ -2,24 +2,28 @@
 #include "utils.h"
 #include <iostream>
 
+string ident_str(string str, int num)
+{
+    string identation = string(num, ' ');
+    string result = "", str_copy = str;
+    size_t pos = str.find("\n");
+
+    do
+    {
+        auto sub_str = str_copy.substr(0, pos);
+        result += identation + sub_str;
+        str_copy.erase(0, pos + 1);
+        if (str_copy.size() < str.size())
+        {
+            result += "\n";
+        }
+    } while ((pos = str_copy.find("\n")) != string::npos);
+
+    return result;
+}
+
 Parser::Parser(Scanner &sc) : scanner(sc)
 {
-    // auto char_map = scanner.symbols().char_sets();
-
-    // auto ident = vector<Set<char>>{char_map["letter"], char_map["("], char_map["letter"], char_map["|"],
-    //                                char_map["digit"],  char_map[")"], char_map["}"]};
-    // auto string_regex =
-    //     vector<Set<char>>{char_map["\""],        char_map["("], char_map["stringCh"], char_map["|"], char_map["\\"],
-    //                       char_map["printable"], char_map[")"], char_map["}"],        char_map["\""]};
-    // auto char_regex = vector<Set<char>>{char_map["\'"], char_map["("],         char_map["charCh"], char_map["|"],
-    //                                     char_map["\\"], char_map["printable"], char_map["("],      char_map["hex"],
-    //                                     char_map[")"],  char_map["}"],         char_map[")"],      char_map["\'"]};
-    // auto all_regex = unordered_map<string, vector<Set<char>>>{
-    //     make_pair("ident", ident), make_pair("string", string_regex), make_pair("char", char_regex)};
-
-    // auto finder = generator.generate_dfa_finder(all_regex, true);
-    // scanner.set_finder(finder);
-
     scanner.get_finder().draw_machine("Scanner_DFA");
     scanner.scan();
 }
@@ -40,6 +44,11 @@ void Parser::get()
     {
         get();
     }
+}
+
+Token<string> Parser::last_token()
+{
+    return *(token_list.end() - 2);
 }
 
 void Parser::expect(string str)
@@ -106,14 +115,27 @@ void Parser::parse()
         ignore_decl();
     }
 
+    ifstream frame_file("parser.frame");
+    ofstream header(new_compiler_name + "/parser.h");
+    ofstream cpp_file(new_compiler_name + "/parser.cpp");
+    streampos f_header_pos, f_impl_pos;
+    write_parser_start(frame_file, header, cpp_file, f_header_pos, f_impl_pos);
+
     // Productions
     expect("PRODUCTIONS");
+    while (scanner.look_ahead().name() == "ident")
+    {
+        prod_decl(frame_file, header, cpp_file);
+    }
 
-    // END
-    // expect("END");
-    // expect("<EOF>");
+    write_parser_end(frame_file, header, cpp_file, f_header_pos, f_impl_pos);
+    frame_file.close();
+    header.close();
+    cpp_file.close();
 
-    int i = 0;
+    expect("END");
+    get();
+    expect("<EOF>");
 }
 
 void Parser::set_decl()
@@ -336,6 +358,150 @@ void Parser::token_decl()
     get();
 }
 
+void Parser::prod_decl(ifstream &frame_file, ofstream &header, ofstream &cpp_file)
+{
+    get();
+
+    auto prod_name = current_token.value();
+    string args = "";
+
+    if (soft_expect("attr"))
+    {
+        args = current_token.value().substr(1, current_token.value().size() - 2);
+    }
+
+    // Declaration
+    header << ident_str(prod_name + "(" + args + ");", 4) << endl;
+
+    // Implementation
+    cpp_file << "void Parser::" + prod_name + "(" + args + ")" << endl << "{" << endl;
+
+    expect("=");
+
+    while (scanner.look_ahead().name() != ".")
+    {
+        get();
+
+        if (current_token.name() == "semAction")
+        {
+            cpp_file << ident_str(current_token.value().substr(2, current_token.value().size() - 4), 4) << endl;
+        }
+        else if (current_token.name() == "ident")
+        {
+            if (token_regex_map.find(current_token.value()) != token_regex_map.end())
+            {
+                cpp_file << ident_str("expect(", 4) + current_token.value() + ");" << endl;
+            }
+            else
+            {
+                string ident_args = "";
+                if (scanner.look_ahead().name() == "attr")
+                {
+                    auto attr_val = scanner.look_ahead().value();
+                    ident_args = attr_val.substr(1, attr_val.size() - 2);
+                    get();
+                }
+                cpp_file << ident_str(last_token().value(), 4) + "(" + ident_args + ");" << endl;
+            }
+        }
+        else if (current_token.name() == "{")
+        {
+            string whl_condition = "";
+            vector<string> cond_bodies = vector<string>{""};
+            int cond_idx = 0;
+            while (current_token.name() != "}")
+            {
+                get();
+                if (current_token.name() == "string" || current_token.name() == "char")
+                {
+                    whl_condition += "scanner.look_ahead().name() == \"" +
+                                     current_token.value().substr(1, current_token.value().size() - 2) + "\"";
+                }
+                else if (current_token.name() == "ident")
+                {
+                    cond_bodies[cond_idx] = cond_bodies[cond_idx] + current_token.value() + "();\n";
+                }
+                else if (current_token.name() == "attr")
+                {
+                    auto prev_str = cond_bodies[cond_idx];
+                    string attr_val = current_token.value().substr(1, current_token.value().size() - 2);
+                    cond_bodies[cond_idx] = prev_str.insert(prev_str.size() - 3, attr_val);
+                }
+                else if (current_token.name() == "semAction")
+                {
+                    string sem_act_val = current_token.value().substr(2, current_token.value().size() - 4);
+                    cond_bodies[cond_idx] = cond_bodies[cond_idx] + sem_act_val + "\n";
+                }
+                else if (current_token.name() == "|")
+                {
+                    whl_condition += " || ";
+                    cond_bodies.push_back("");
+                    cond_idx++;
+                }
+            }
+            cpp_file << ident_str("while(" + whl_condition + ")", 4) << endl << ident_str("{", 4) << endl;
+            if (cond_idx == 0)
+            {
+                cpp_file << ident_str(cond_bodies[0], 8);
+            }
+            else
+            {
+                for (auto &body_str : cond_bodies)
+                {
+                    auto pos = whl_condition.find("||");
+                    auto if_cond = whl_condition.substr(0, pos);
+                    whl_condition.erase(0, pos + 3);
+                    cpp_file << ident_str("if (" + if_cond + ")", 8) << endl << ident_str("{", 8) << endl;
+                    cpp_file << ident_str("get();", 12) << endl;
+                    cpp_file << ident_str(body_str, 12);
+                    cpp_file << ident_str("}", 8) << endl;
+                }
+            }
+            cpp_file << ident_str("}", 4) << endl;
+        }
+        else if (current_token.name() == "[")
+        {
+            expect("string"); // TODO Expect string or char
+            cpp_file << ident_str("if (scanner.look_ahead().name() == ", 4) + current_token.value() + ")" << endl
+                     << ident_str("{", 4) << endl;
+            cpp_file << ident_str("get();", 8) << endl;
+            while (current_token.name() != "]")
+            {
+                get();
+                if (current_token.name() == "ident")
+                {
+                    string ident_args = "";
+                    if (scanner.look_ahead().name() == "attr")
+                    {
+                        auto attr_val = scanner.look_ahead().value();
+                        ident_args = attr_val.substr(1, attr_val.size() - 2);
+                        get();
+                    }
+                    cpp_file << ident_str(last_token().value(), 8) + "(" + ident_args + ");" << endl;
+                }
+                else if (current_token.name() == "semAction")
+                {
+                    cpp_file << ident_str(current_token.value().substr(2, current_token.value().size() - 4), 8) << endl;
+                }
+            }
+            cpp_file << ident_str("}", 4) << endl;
+        }
+        else if (current_token.name() == "(")
+        {
+        }
+        else if (current_token.name() == "=")
+        {
+            // TODO Handle error (Production was probably not closed)
+        }
+    }
+
+    cpp_file << "}" << endl << endl;
+
+    // TODO Handle closing error ("}", ")" or "]" missing)
+    // TODO expect string after "{" or "["
+    get();
+}
+
 string Parser::compiler_name()
 {
     return new_compiler_name;
@@ -454,9 +620,53 @@ void Parser::write_scanner()
     cpp_file.close();
 }
 
+void Parser::write_parser_start(ifstream &frame_file, ofstream &header, ofstream &cpp_file, streampos &f_header_pos,
+                                streampos &f_impl_pos)
+{
+
+    string line;
+
+    // Ignore comments
+    while (line != "-->begin")
+    {
+        getline(frame_file, line);
+    }
+
+    // Copy the first part of the header
+    getline(frame_file, line);
+    while (line != "-->prod_declarations")
+    {
+        header << line << endl;
+        getline(frame_file, line);
+    }
+    f_header_pos = frame_file.tellg();
+
+    // Ignore the rest until the begining of the declaration file is reached
+    while (line != "-->begin")
+    {
+        getline(frame_file, line);
+    }
+
+    // Copy the start of the cpp declaration
+    getline(frame_file, line);
+    while (line != "-->prod_implementations")
+    {
+        cpp_file << line << endl;
+        getline(frame_file, line);
+    }
+    f_impl_pos = frame_file.tellg();
+}
+
+void Parser::write_parser_start(ifstream &frame_file, ofstream &header, ofstream &cpp_file, streampos &f_header_pos,
+                                streampos &f_impl_pos)
+{
+    string line;
+    // Finish coping the implementation file
+}
+
 void Parser::syn_error()
 {
-    auto prev_token = token_list[token_list.size() - 2];
+    auto prev_token = last_token();
     auto error =
         Error("Syntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")", SYNTACTIC_ERROR);
     cout << error.value() << endl;
