@@ -9,6 +9,21 @@ parser.h Specification
 #include "s_core_generator.h"
 #include "scanner.h"
 
+class Production
+{
+  private:
+    string p_name;
+    string p_attributes;
+    vector<Token<string>> p_body;
+
+  public:
+    Production(string, string, vector<Token<string>>);
+    ~Production();
+    string name();
+    string attr();
+    vector<Token<string>> body();
+};
+
 class Parser
 {
   private:
@@ -45,6 +60,30 @@ parser.cpp Specification
 #include "parser.h"
 #include "utils.h"
 #include <iostream>
+
+Production::Production(string name, string attr, vector<Token<string>> body)
+    : p_name(name), p_attributes(attr), p_body(body)
+{
+}
+
+Production::~Production()
+{
+}
+
+string Production::name()
+{
+    return p_name;
+}
+
+string Production::attr()
+{
+    return p_attributes;
+}
+
+vector<Token<string>> Production::body()
+{
+    return p_body;
+}
 
 Parser::Parser(Scanner &sc) : scanner(sc)
 {
