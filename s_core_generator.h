@@ -12,8 +12,8 @@ using namespace std;
 class SCoreGenerator
 {
   private:
-    Set<char> regex_operators = Set<char>{'|', '}', ']', '\0'};
-    Set<char> special_chars = Set<char>{'(', ')', '{', '['};
+    Set<char> regex_operators = Set<char>{'\x2', '\x3', '\x4', '\0'};
+    Set<char> special_chars = Set<char>{'\x5', '\x6', '\x7', '\x8'};
     Set<string> coco_operators = Set<string>{".", "..", "=", "-", "+"};
 
     bool is_regex_operator(Token<Set<char>>);

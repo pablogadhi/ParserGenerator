@@ -157,11 +157,11 @@ void nullable(shared_ptr<TreeNode<int>> node)
     switch (node->symbol())
     {
     case 1:
-    case 125:
-    case 93:
+    case 3:
+    case 4:
         is_nullable = true;
         break;
-    case 124:
+    case 2:
         is_nullable = any_cast<bool>(node->left()->get_info()["nullable"]) ||
                       any_cast<bool>(node->right()->get_info()["nullable"]);
         break;
@@ -206,7 +206,7 @@ void first_last_pos(shared_ptr<TreeNode<int>> node, string info_entry_key, bool 
     {
     case 1:
         break;
-    case 124:
+    case 2:
         result = first_last_pos_or(node->left(), node->right(), info_entry_key, last);
         break;
     case 0:
@@ -219,8 +219,8 @@ void first_last_pos(shared_ptr<TreeNode<int>> node, string info_entry_key, bool 
             result = any_cast<Set<int>>(important_child->get_info()[info_entry_key]);
         }
         break;
-    case 125:
-    case 93:
+    case 3:
+    case 4:
         result = any_cast<Set<int>>(important_child->get_info()[info_entry_key]);
         break;
     default:
@@ -256,7 +256,7 @@ void followpos(shared_ptr<TreeNode<int>> node)
                 union_between_sets<int>(any_cast<Set<int>>(node->right()->get_info()["firstpos"]), prev_followpos));
         }
     }
-    else if (node->symbol() == 125)
+    else if (node->symbol() == 3)
     {
         for (auto &position : any_cast<Set<int>>(node->get_info()["lastpos"]))
         {

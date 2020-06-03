@@ -355,13 +355,13 @@ void Parser::token_decl()
                 regex.push_back(Token<Set<char>>("char", Set<char>{c}));
             }
         }
-        else if (current_token.name() == "{" || current_token.name() == "[")
+        else if (current_token.name() == "\x7" || current_token.name() == "\x8")
         {
-            regex.push_back(Token<Set<char>>("(", Set<char>{'('}));
+            regex.push_back(Token<Set<char>>("\x5", Set<char>{'('}));
         }
-        else if (current_token.name() == "}" || current_token.name() == "]")
+        else if (current_token.name() == "\x3" || current_token.name() == "\x4")
         {
-            regex.push_back(Token<Set<char>>(")", Set<char>{')'}));
+            regex.push_back(Token<Set<char>>("\x6", Set<char>{')'}));
             regex.push_back(Token<Set<char>>(current_token.name(), Set<char>{current_token.value()[0]}));
         }
         else if (current_token.name() == "ANY")
@@ -418,7 +418,7 @@ void Parser::prod_decl()
         if (current_token.name() == "char")
         {
             auto t_val_str = current_token.value().substr(1, current_token.value().size() - 2);
-            token_regex_map[current_token.value()] = make_pair(
+            token_regex_map[t_val_str] = make_pair(
                 vector<Token<Set<char>>>{Token(t_val_str, Set<char>{str_to_char(current_token.value())})}, false);
             prod_body.push_back(Token<string>(current_token.name(), t_val_str));
             token_idx++;
@@ -431,7 +431,7 @@ void Parser::prod_decl()
             {
                 regex.push_back(Token<Set<char>>(t_val_str, Set<char>{c}));
             }
-            token_regex_map[current_token.value()] = make_pair(regex, false);
+            token_regex_map[t_val_str] = make_pair(regex, false);
             prod_body.push_back(Token<string>(current_token.name(), t_val_str));
             token_idx++;
         }
@@ -477,11 +477,11 @@ void Parser::compute_first_pos(Token<string> symbol, Production last_prod, int s
             compute_first_pos(prod.body()[0], prod, first_idx, result, prev_computed);
         }
     }
-    else if (symbol.name() == "{" || symbol.name() == "(")
+    else if (symbol.name() == "\x7" || symbol.name() == "\x5")
     {
-        if (symbol.name() == "{")
+        if (symbol.name() == "\x7")
         {
-            int closing_t_idx = find_token_in_prod(last_prod, Token<string>("}", "}"));
+            int closing_t_idx = find_token_in_prod(last_prod, Token<string>("\x3", "}"));
             if (closing_t_idx == (last_prod.body().size() - 1))
             {
                 result = union_between_sets(result, Set<string>{""});
@@ -498,7 +498,7 @@ void Parser::compute_first_pos(Token<string> symbol, Production last_prod, int s
         {
             compute_first_pos(last_prod.body()[first_idx], last_prod, first_idx, result, prev_computed);
             // TODO Find closing tags first
-            if ((first_idx = find_token_in_prod(last_prod, Token<string>("|", "|"), first_idx)) == -1)
+            if ((first_idx = find_token_in_prod(last_prod, Token<string>("\x2", "|"), first_idx)) == -1)
             {
                 break;
             }
@@ -508,9 +508,9 @@ void Parser::compute_first_pos(Token<string> symbol, Production last_prod, int s
             }
         }
     }
-    else if (symbol.name() == "[")
+    else if (symbol.name() == "\x8")
     {
-        int closing_t_idx = find_token_in_prod(last_prod, Token<string>("]", "]"));
+        int closing_t_idx = find_token_in_prod(last_prod, Token<string>("\x4", "]"));
         if (closing_t_idx == (last_prod.body().size() - 1))
         {
             result = union_between_sets(result, Set<string>{""});
@@ -542,11 +542,11 @@ void Parser::compute_follow_pos(string non_ter_name)
         {
             auto next_idx = i + 1;
             if (next_idx < prod.body().size() &&
-                Set<string>{"}", "]", ")", "|"}.has_item(prod.body()[next_idx].name()) != -1)
+                Set<string>{"\x3", "\x4", "\x6", "\x2"}.has_item(prod.body()[next_idx].name()) != -1)
             {
                 for (int j = next_idx; j < prod.body().size(); j++)
                 {
-                    if (Set<string>{"}", "]", ")"}.has_item(prod.body()[j].name()) != -1)
+                    if (Set<string>{"\x3", "\x4", "\x6"}.has_item(prod.body()[j].name()) != -1)
                     {
                         next_idx = j + 1;
                         break;
@@ -587,6 +587,22 @@ void Parser::fill_parsing_table()
     for (auto &prod : productions)
     {
         compute_follow_pos(prod.name());
+    }
+
+    for (auto &prod : productions)
+    {
+        for (auto &terminal : first_pos[prod.name()])
+        {
+            parsing_table[prod.name()][terminal] = production_indices[prod.name()];
+        }
+
+        if (first_pos[prod.name()].has_item("") != -1)
+        {
+            for (auto &terminal : follow_pos[prod.name()])
+            {
+                parsing_table[prod.name()][terminal] = production_indices[prod.name()];
+            }
+        }
     }
 }
 
@@ -685,7 +701,7 @@ void Parser::write_scanner()
         {
             auto t_state_name = to_string(tran.second->name());
             cpp_file << "    state_ptrs[" + state_name + "]->add_t_function(make_pair(" + to_string(tran.first) + ", " +
-                            "state_ptrs[" + t_state_name + "]" + "));"
+                            "state_ptrs[" + t_state_name + "]));"
                      << endl;
         }
     }
@@ -780,7 +796,7 @@ void Parser::write_parser()
     //         string whl_condition = "";
     //         vector<string> cond_bodies = vector<string>{""};
     //         int cond_idx = 0;
-    //         while (current_token.name() != "}")
+    //         while (current_token.name() != "\x3")
     //         {
     //             get();
     //             if (current_token.name() == "string" || current_token.name() == "char")
@@ -803,7 +819,7 @@ void Parser::write_parser()
     //                 string sem_act_val = current_token.value().substr(2, current_token.value().size() - 4);
     //                 cond_bodies[cond_idx] = cond_bodies[cond_idx] + sem_act_val + "\n";
     //             }
-    //             else if (current_token.name() == "|")
+    //             else if (current_token.name() == "\x2")
     //             {
     //                 whl_condition += " || ";
     //                 cond_bodies.push_back("");
@@ -836,7 +852,7 @@ void Parser::write_parser()
     //         cpp_file << ident_str("if (scanner.look_ahead().name() == ", 4) + current_token.value() + ")" << endl
     //                  << ident_str("{", 4) << endl;
     //         cpp_file << ident_str("get();", 8) << endl;
-    //         while (current_token.name() != "]")
+    //         while (current_token.name() != "\x4")
     //         {
     //             get();
     //             if (current_token.name() == "ident")
@@ -858,7 +874,7 @@ void Parser::write_parser()
     //         }
     //         cpp_file << ident_str("}", 4) << endl;
     //     }
-    //     else if (current_token.name() == "(")
+    //     else if (current_token.name() == "\x5")
     //     {
     //     }
     //     else if (current_token.name() == "=")

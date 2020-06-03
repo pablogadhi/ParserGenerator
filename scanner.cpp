@@ -64,17 +64,45 @@ Scanner::Scanner(string file_name)
 
     // Initialize Character Map
     s_table.add_char_set("<IGNORE>", Set<char>{'\t', '\n', '\r', ' '});
-    s_table.add_char_set("charCh", Set<char>{'\t', ' ', '!', '\"', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
-    s_table.add_char_set("stringCh", Set<char>{'\t', ' ', '!', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
-    s_table.add_char_set("hex", Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'});
-    s_table.add_char_set("printable", Set<char>{' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
+    s_table.add_char_set("charCh",
+                         Set<char>{'\t', ' ', '!', '\"', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/',
+                                   '0',  '1', '2', '3',  '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
+                                   '@',  'A', 'B', 'C',  'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+                                   'P',  'Q', 'R', 'S',  'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '^', '_', '`', 'a',
+                                   'b',  'c', 'd', 'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+                                   'r',  's', 't', 'u',  'v', 'w', 'x', 'y', 'z', '{', '~'});
+    s_table.add_char_set("stringCh",
+                         Set<char>{'\t', ' ', '!', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+                                   '0',  '1', '2', '3', '4', '5', '6', '7',  '8', '9', ':', ';', '<', '=', '>', '?',
+                                   '@',  'A', 'B', 'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+                                   'P',  'Q', 'R', 'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', '^', '_', '`', 'a',
+                                   'b',  'c', 'd', 'e', 'f', 'g', 'h', 'i',  'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+                                   'r',  's', 't', 'u', 'v', 'w', 'x', 'y',  'z', '{', '~'});
+    s_table.add_char_set("hex",
+                         Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'});
+    s_table.add_char_set("printable",
+                         Set<char>{' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',',  '-', '.', '/',
+                                   '0', '1', '2',  '3', '4', '5', '6', '7',  '8', '9', ':', ';', '<',  '=', '>', '?',
+                                   '@', 'A', 'B',  'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O',
+                                   'P', 'Q', 'R',  'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', '\\', '^', '_', '`',
+                                   'a', 'b', 'c',  'd', 'e', 'f', 'g', 'h',  'i', 'j', 'k', 'l', 'm',  'n', 'o', 'p',
+                                   'q', 'r', 's',  't', 'u', 'v', 'w', 'x',  'y', 'z', '{', '~'});
     s_table.add_char_set("space", Set<char>{' '});
-    s_table.add_char_set("attrCh", Set<char>{'\t', '\n', '\r', ' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '=', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '~'});
+    s_table.add_char_set("attrCh",
+                         Set<char>{'\t', '\n', '\r', ' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*',  '+', ',',
+                                   '-',  '.',  '/',  '0', '1', '2',  '3', '4', '5', '6', '7',  '8', '9', ':',  ';', '=',
+                                   '?',  '@',  'A',  'B', 'C', 'D',  'E', 'F', 'G', 'H', 'I',  'J', 'K', 'L',  'M', 'N',
+                                   'O',  'P',  'Q',  'R', 'S', 'T',  'U', 'V', 'W', 'X', 'Y',  'Z', '[', '\\', '^', '_',
+                                   '`',  'a',  'b',  'c', 'd', 'e',  'f', 'g', 'h', 'i', 'j',  'k', 'l', 'm',  'n', 'o',
+                                   'p',  'q',  'r',  's', 't', 'u',  'v', 'w', 'x', 'y', 'z',  '{', '~'});
     s_table.add_char_set("tab", Set<char>{'\t'});
     s_table.add_char_set("lf", Set<char>{'\n'});
     s_table.add_char_set("digit", Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'});
     s_table.add_char_set("cr", Set<char>{'\r'});
-    s_table.add_char_set("letter", Set<char>{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_'});
+    s_table.add_char_set("letter", Set<char>{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+                                             'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b',
+                                             'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                                             'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_'});
 
     // Initialize keywords
     s_table.add_keyword("PRODUCTIONS", "PRODUCTIONS");
@@ -92,7 +120,7 @@ Scanner::Scanner(string file_name)
     unordered_map<int, shared_ptr<State>> state_ptrs;
     auto state_0 = State(0, 0, 0, "");
     state_ptrs[0] = make_shared<State>(state_0);
-    auto state_1 = State(1, 1, 1, "(");
+    auto state_1 = State(1, 1, 1, "\x5");
     state_ptrs[1] = make_shared<State>(state_1);
     auto state_18 = State(18, 0, 0, "");
     state_ptrs[18] = make_shared<State>(state_18);
@@ -120,7 +148,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[23] = make_shared<State>(state_23);
     auto state_28 = State(28, 0, 0, "");
     state_ptrs[28] = make_shared<State>(state_28);
-    auto state_5 = State(5, 1, 0, ")");
+    auto state_5 = State(5, 1, 0, "\x6");
     state_ptrs[5] = make_shared<State>(state_5);
     auto state_6 = State(6, 1, 0, "+");
     state_ptrs[6] = make_shared<State>(state_6);
@@ -146,15 +174,15 @@ Scanner::Scanner(string file_name)
     state_ptrs[31] = make_shared<State>(state_31);
     auto state_32 = State(32, 0, 0, "");
     state_ptrs[32] = make_shared<State>(state_32);
-    auto state_13 = State(13, 1, 0, "[");
+    auto state_13 = State(13, 1, 0, "\x8");
     state_ptrs[13] = make_shared<State>(state_13);
-    auto state_14 = State(14, 1, 0, "{");
+    auto state_14 = State(14, 1, 0, "\x7");
     state_ptrs[14] = make_shared<State>(state_14);
-    auto state_15 = State(15, 1, 0, "]");
+    auto state_15 = State(15, 1, 0, "\x4");
     state_ptrs[15] = make_shared<State>(state_15);
-    auto state_16 = State(16, 1, 0, "|");
+    auto state_16 = State(16, 1, 0, "\x2");
     state_ptrs[16] = make_shared<State>(state_16);
-    auto state_17 = State(17, 1, 0, "}");
+    auto state_17 = State(17, 1, 0, "\x3");
     state_ptrs[17] = make_shared<State>(state_17);
     state_ptrs[0]->add_t_function(make_pair(40, state_ptrs[1]));
     state_ptrs[0]->add_t_function(make_pair(46, state_ptrs[2]));
