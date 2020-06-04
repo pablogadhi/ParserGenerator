@@ -82,6 +82,7 @@ class Scanner
     Token<string> current();
     Token<string> look_ahead();
     vector<Error> errors();
+    void lex_error();
 };
 
 #endif

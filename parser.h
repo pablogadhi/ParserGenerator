@@ -19,7 +19,7 @@ class Production
     ~Production();
     string name();
     string attr();
-    vector<Token<string>> body();
+    vector<Token<string>> &body();
     unordered_map<int, string> sem_actions();
     unordered_map<int, string> ident_attr();
 };
@@ -39,7 +39,6 @@ class Parser
     unordered_map<string, int> production_indices;
     unordered_map<string, Set<string>> first_pos;
     unordered_map<string, Set<string>> follow_pos;
-    unordered_map<string, unordered_map<string, int>> parsing_table;
     vector<Error> syntactic_errors;
 
   public:
@@ -50,6 +49,8 @@ class Parser
     Token<string> last_token();
     void expect(string);
     bool soft_expect(string);
+    string compiler_name();
+    bool is_non_terminal(Token<string>);
     void set_decl();
     void keyword_decl();
     void token_decl();
@@ -57,10 +58,16 @@ class Parser
     void prod_decl();
     void compute_first_pos(Token<string>, Production, int, Set<string> &, vector<string>);
     void compute_follow_pos(string);
-    void fill_parsing_table();
+    void fill_parsing_info();
     void write_scanner();
+    string write_ident_call(Token<string>, int, Production &, int, ofstream &, bool write = true);
+    string write_kleene_par_call(Token<string>, Production &, vector<Token<string>>::iterator &, int, ofstream &,
+                                 bool write = true);
+    string write_if_call(Token<string>, Production &, vector<Token<string>>::iterator &, int, ofstream &,
+                         bool write = true);
+    string write_expect_call(Token<string>, int, ofstream &, bool write = true);
+    string write_sem_action(int, Production &, int, ofstream &, bool write = true);
     void write_parser();
-    string compiler_name();
     void syn_error();
 };
 

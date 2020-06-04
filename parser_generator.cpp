@@ -45,6 +45,7 @@ int main(int argc, char const *argv[])
 
     rename(compiler_path / "main.frame", compiler_path / (compiler_name + ".cpp"));
     parser.write_scanner();
+    parser.write_parser();
 
     ifstream cmake_template("CMakeLists.frame");
     ofstream cmake_file(compiler_path / "CMakeLists.txt");

@@ -1398,6 +1398,10 @@ Token<string> Scanner::scan()
 {
     c_token = n_token;
     n_token = next_token();
+    while (n_token.name() == "<ERROR>")
+    {
+        n_token = next_token();
+    }
     return c_token;
 }
 
@@ -1445,7 +1449,7 @@ Token<string> Scanner::next_token()
         }
         else if (finder.current().name() == -1)
         {
-            error_list.push_back(Error(line, column, "Unexpected char: " + char_to_str(*forward, true)));
+            lex_error();
             finder.reset_movements();
             next_char();
             return Token<string>("<ERROR>", "");
@@ -1493,6 +1497,14 @@ Token<string> Scanner::look_ahead()
 vector<Error> Scanner::errors()
 {
     return error_list;
+}
+
+void Scanner::lex_error()
+{
+    auto error = Error(line, column, "Unexpected char: " + char_to_str(*forward, true));
+    cout << "LEXICAL ERROR found in line " << error.line() << " and column " << error.column() << ": " << error.value()
+         << endl;
+    error_list.push_back(error);
 }
 
 template class Token<string>;

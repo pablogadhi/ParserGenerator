@@ -6,7 +6,6 @@ parser.h Specification
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "s_core_generator.h"
 #include "scanner.h"
 
 class Production
@@ -15,25 +14,34 @@ class Production
     string p_name;
     string p_attributes;
     vector<Token<string>> p_body;
+    unordered_map<int, string> p_sem_actions;
+    unordered_map<int, string> p_ident_attr;
 
   public:
-    Production(string, string, vector<Token<string>>);
+    Production(string, string, vector<Token<string>>, unordered_map<int, string>, unordered_map<int, string>);
+    Production();
     ~Production();
     string name();
     string attr();
-    vector<Token<string>> body();
+    vector<Token<string>> &body();
+    unordered_map<int, string> sem_actions();
+    unordered_map<int, string> ident_attr();
 };
 
 class Parser
 {
   private:
     Scanner &scanner;
-    SCoreGenerator generator;
     Token<string> current_token;
     vector<Token<string>> token_list;
     string new_compiler_name;
     SymbolTable new_table;
     unordered_map<string, pair<vector<Token<Set<char>>>, bool>> token_regex_map;
+    string start_s_name;
+    vector<Production> productions;
+    unordered_map<string, int> production_indices;
+    unordered_map<string, Set<string>> first_pos;
+    unordered_map<string, Set<string>> follow_pos;
     vector<Error> syntactic_errors;
 
   public:
@@ -44,8 +52,9 @@ class Parser
     Token<string> last_token();
     void expect(string);
     bool soft_expect(string);
--->prod_declarations
     string compiler_name();
+    bool is_non_terminal(Token<string>);
+-->prod_declarations
     void syn_error();
 };
 
@@ -61,8 +70,45 @@ parser.cpp Specification
 #include "utils.h"
 #include <iostream>
 
-Production::Production(string name, string attr, vector<Token<string>> body)
-    : p_name(name), p_attributes(attr), p_body(body)
+string ident_str(string str, int num)
+{
+    string identation = string(num, ' ');
+    string result = "", str_copy = str;
+    size_t pos = str.find("\n");
+
+    do
+    {
+        auto sub_str = str_copy.substr(0, pos);
+        result += identation + sub_str;
+        str_copy.erase(0, pos + 1);
+        if (str_copy.size() < str.size())
+        {
+            result += "\n";
+        }
+    } while ((pos = str_copy.find("\n")) != string::npos);
+
+    return result;
+}
+
+int find_token_in_prod(Production prod, Token<string> token, int offset = 0)
+{
+    for (int i = offset; i < prod.body().size(); i++)
+    {
+        if (prod.body()[i].name() == token.name())
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+Production::Production(string name, string attr, vector<Token<string>> body, unordered_map<int, string> sem_actions,
+                       unordered_map<int, string> ident_attr)
+    : p_name(name), p_attributes(attr), p_body(body), p_sem_actions(sem_actions), p_ident_attr(ident_attr)
+{
+}
+
+Production::Production()
 {
 }
 
@@ -80,9 +126,19 @@ string Production::attr()
     return p_attributes;
 }
 
-vector<Token<string>> Production::body()
+vector<Token<string>> &Production::body()
 {
     return p_body;
+}
+
+unordered_map<int, string> Production::sem_actions()
+{
+    return p_sem_actions;
+}
+
+unordered_map<int, string> Production::ident_attr()
+{
+    return p_ident_attr;
 }
 
 Parser::Parser(Scanner &sc) : scanner(sc)
@@ -142,22 +198,26 @@ bool Parser::soft_expect(string str)
     return current_token.name() == str;
 }
 
--->prod_implementations
-
-void Parser::parse()
-{
-    get();
--->first_prod
-}
-
 string Parser::compiler_name()
 {
     return new_compiler_name;
 }
 
+bool Parser::is_non_terminal(Token<string> token)
+{
+    return token.name() == "ident" && token_regex_map.find(token.value()) == token_regex_map.end();
+}
+
+-->prod_implementations
+
+void Parser::parse()
+{
+-->first_prod
+}
+
 void Parser::syn_error()
 {
-    auto prev_token = token_list[token_list.size() - 2];
+    auto prev_token = last_token();
     auto error =
         Error("Syntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")", SYNTACTIC_ERROR);
     cout << error.value() << endl;

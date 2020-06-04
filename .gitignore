@@ -41,8 +41,10 @@ build/
 *.ps
 *.png
 
-# Coco
+# Coco and other tests
 Coco/
+Aritmetica/
+Double/
 
 # COCOL files, except for the main one
 *.ATG

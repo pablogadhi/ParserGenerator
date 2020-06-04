@@ -58,9 +58,19 @@ string Production::attr()
     return p_attributes;
 }
 
-vector<Token<string>> Production::body()
+vector<Token<string>> &Production::body()
 {
     return p_body;
+}
+
+unordered_map<int, string> Production::sem_actions()
+{
+    return p_sem_actions;
+}
+
+unordered_map<int, string> Production::ident_attr()
+{
+    return p_ident_attr;
 }
 
 Parser::Parser(Scanner &sc) : scanner(sc)
@@ -71,11 +81,6 @@ Parser::Parser(Scanner &sc) : scanner(sc)
 
 Parser::~Parser()
 {
-}
-
-string Parser::compiler_name()
-{
-    return new_compiler_name;
 }
 
 void Parser::get()
@@ -125,6 +130,16 @@ bool Parser::soft_expect(string str)
     return current_token.name() == str;
 }
 
+string Parser::compiler_name()
+{
+    return new_compiler_name;
+}
+
+bool Parser::is_non_terminal(Token<string> token)
+{
+    return token.name() == "ident" && token_regex_map.find(token.value()) == token_regex_map.end();
+}
+
 void Parser::parse()
 {
     // Compiler Name
@@ -168,7 +183,7 @@ void Parser::parse()
     {
         prod_decl();
     }
-    fill_parsing_table();
+    fill_parsing_info();
 
     expect("END");
     get();
@@ -454,9 +469,8 @@ void Parser::prod_decl()
 
     production_indices[prod_name] = productions.size();
     productions.push_back(Production(prod_name, args, prod_body, sem_actions, ident_attr));
-    if (parsing_table.find(prod_name) == parsing_table.end())
+    if (first_pos.find(prod_name) == first_pos.end())
     {
-        parsing_table[prod_name] = unordered_map<string, int>{};
         first_pos[prod_name] = Set<string>{};
         follow_pos[prod_name] = Set<string>{};
     }
@@ -468,7 +482,7 @@ void Parser::compute_first_pos(Token<string> symbol, Production last_prod, int s
                                vector<string> prev_computed)
 {
     int first_idx = 0;
-    if (symbol.name() == "ident" && token_regex_map.find(symbol.value()) == token_regex_map.end())
+    if (is_non_terminal(symbol))
     {
         if (find(prev_computed.begin(), prev_computed.end(), symbol.value()) == prev_computed.end())
         {
@@ -538,7 +552,7 @@ void Parser::compute_follow_pos(string non_ter_name)
     for (int i = 0; i < prod.body().size(); i++)
     {
         auto token = prod.body()[i];
-        if (token.name() == "ident" && token_regex_map.find(token.value()) == token_regex_map.end())
+        if (is_non_terminal(token))
         {
             auto next_idx = i + 1;
             if (next_idx < prod.body().size() &&
@@ -575,7 +589,7 @@ void Parser::compute_follow_pos(string non_ter_name)
     }
 }
 
-void Parser::fill_parsing_table()
+void Parser::fill_parsing_info()
 {
     for (auto &prod : productions)
     {
@@ -587,22 +601,6 @@ void Parser::fill_parsing_table()
     for (auto &prod : productions)
     {
         compute_follow_pos(prod.name());
-    }
-
-    for (auto &prod : productions)
-    {
-        for (auto &terminal : first_pos[prod.name()])
-        {
-            parsing_table[prod.name()][terminal] = production_indices[prod.name()];
-        }
-
-        if (first_pos[prod.name()].has_item("") != -1)
-        {
-            for (auto &terminal : follow_pos[prod.name()])
-            {
-                parsing_table[prod.name()][terminal] = production_indices[prod.name()];
-            }
-        }
     }
 }
 
@@ -719,13 +717,251 @@ void Parser::write_scanner()
     cpp_file.close();
 }
 
+string Parser::write_ident_call(Token<string> token, int t_idx, Production &prod, int ident_level, ofstream &cpp_file,
+                                bool write)
+{
+    auto ident_attr = prod.ident_attr();
+
+    string ident_args = "";
+    if (ident_attr.find(t_idx + 1) != ident_attr.end())
+    {
+        ident_args = ident_attr[t_idx + 1];
+    }
+    string final_str = ident_str(token.value(), ident_level) + "(" + ident_args + ");" + "\n";
+    if (write)
+    {
+        cpp_file << final_str;
+    }
+    return final_str;
+}
+
+string Parser::write_expect_call(Token<string> token, int ident_level, ofstream &cpp_file, bool write)
+{
+    string final_str = ident_str("expect(\"", ident_level) + token.value() + "\");\n";
+    if (write)
+    {
+        cpp_file << final_str;
+    }
+    return final_str;
+}
+
+string Parser::write_sem_action(int idx, Production &prod, int ident_level, ofstream &cpp_file, bool write)
+{
+    auto sem_actions = prod.sem_actions();
+    if (sem_actions.find(idx) != sem_actions.end())
+    {
+        string final_str = ident_str(sem_actions[idx], ident_level) + "\n";
+        if (write)
+        {
+            cpp_file << final_str;
+        }
+        return final_str;
+    }
+    return "";
+}
+
+string Parser::write_if_call(Token<string> token, Production &prod, vector<Token<string>>::iterator &body_ptr,
+                             int ident_level, ofstream &cpp_file, bool write)
+{
+    body_ptr++;
+    Token<string> inner_t = *body_ptr;
+    int inner_t_idx = body_ptr - prod.body().begin();
+    Set<string> first_pos_set;
+    compute_first_pos(inner_t, prod, inner_t_idx, first_pos_set, vector<string>{});
+
+    string cond_str = "";
+    bool has_epsilon = false;
+    for (auto &fi_item : first_pos_set)
+    {
+        if (fi_item != "")
+        {
+            cond_str += "scanner.look_ahead().name() == \"" + fi_item + "\" || ";
+        }
+        else
+        {
+            has_epsilon = true;
+        }
+    }
+    cond_str = cond_str.substr(0, cond_str.size() - 4);
+
+    string final_string = ident_str("if(", ident_level) + cond_str + ")\n";
+    final_string += ident_str("{", ident_level) + "\n";
+    final_string += ident_str("get();", ident_level + 4) + "\n";
+
+    while (inner_t.name() != "\x4")
+    {
+        if (is_non_terminal(inner_t))
+        {
+            final_string += write_ident_call(inner_t, inner_t_idx, prod, ident_level + 4, cpp_file, false);
+        }
+        else
+        {
+            if (prod.body()[inner_t_idx - 1].name() != "\x8")
+            {
+                final_string += write_expect_call(inner_t, ident_level + 4, cpp_file, false);
+            }
+        }
+
+        final_string += write_sem_action(inner_t_idx + 1, prod, ident_level + 4, cpp_file, false);
+
+        body_ptr++;
+        inner_t = *body_ptr;
+        inner_t_idx = body_ptr - prod.body().begin();
+    }
+
+    final_string += ident_str("}", ident_level) + "\n";
+
+    if (write)
+    {
+        cpp_file << final_string;
+    }
+
+    return final_string;
+}
+
+string Parser::write_kleene_par_call(Token<string> token, Production &prod, vector<Token<string>>::iterator &body_ptr,
+                                     int ident_level, ofstream &cpp_file, bool write)
+{
+
+    string whl_condition = "";
+    vector<string> inner_conditions;
+    vector<string> inner_bodies;
+    body_ptr++;
+    while ((*body_ptr).name() != "\x3" && (*body_ptr).name() != "\x6")
+    {
+        Token<string> inner_t = *body_ptr;
+        int inner_t_idx = body_ptr - prod.body().begin();
+        Set<string> first_pos_set;
+        compute_first_pos(inner_t, prod, inner_t_idx, first_pos_set, vector<string>{});
+
+        string cond_str = "";
+        bool has_epsilon = false;
+        for (auto &fi_item : first_pos_set)
+        {
+            if (fi_item != "")
+            {
+                cond_str += "scanner.look_ahead().name() == \"" + fi_item + "\" || ";
+                if (token.name() == "\x7")
+                {
+                    whl_condition += "scanner.look_ahead().name() == \"" + fi_item + "\" || ";
+                }
+            }
+            else
+            {
+                has_epsilon = true;
+            }
+        }
+
+        if (has_epsilon && is_non_terminal(inner_t))
+        {
+            Set<string> follow_pos_set;
+            compute_follow_pos(inner_t.value());
+            for (auto &fo_item : follow_pos_set)
+            {
+                cond_str += "current_token.name() == \"" + fo_item + "\" || ";
+                if (token.name() == "\x7")
+                {
+                    whl_condition += "current_token.name() == \"" + fo_item + "\" || ";
+                }
+            }
+        }
+
+        cond_str = cond_str.substr(0, cond_str.size() - 4);
+        inner_conditions.push_back(cond_str);
+
+        string inner_body_str = "";
+        while (inner_t.name() != "\x2" && inner_t.name() != "\x3" && inner_t.name() != "\x6")
+        {
+            if (is_non_terminal(inner_t))
+            {
+                inner_body_str += write_ident_call(inner_t, inner_t_idx, prod, ident_level + 4, cpp_file, false);
+            }
+            else if (inner_t.name() == "\x7" || inner_t.name() == "\x5")
+            {
+                int new_ident_level = ident_level;
+                if (find_token_in_prod(prod, Token<string>("\x2", "|"), inner_t_idx) != -1)
+                {
+                    new_ident_level += 4;
+                }
+                inner_body_str += write_kleene_par_call(inner_t, prod, body_ptr, new_ident_level, cpp_file, false);
+            }
+            else if (inner_t.name() == "\x8")
+            {
+                inner_body_str += write_if_call(inner_t, prod, body_ptr, ident_level + 4, cpp_file, false);
+            }
+            else
+            {
+                auto prev_token = prod.body()[inner_t_idx - 1];
+                if (find_token_in_prod(prod, Token<string>("\x2", "|"), inner_t_idx) == -1 &&
+                    prev_token.name() != "\x2")
+                {
+                    inner_body_str += write_expect_call(inner_t, ident_level + 4, cpp_file, false);
+                }
+            }
+
+            inner_body_str += write_sem_action(inner_t_idx + 1, prod, ident_level + 4, cpp_file, false);
+
+            body_ptr++;
+            inner_t = *body_ptr;
+            inner_t_idx = body_ptr - prod.body().begin();
+        }
+        inner_bodies.push_back(inner_body_str);
+
+        if (inner_t.name() == "\x2")
+        {
+            body_ptr++;
+        }
+    }
+
+    string final_str = "";
+    if (whl_condition.size() > 0)
+    {
+        final_str = ident_str("while(", ident_level) + whl_condition.substr(0, whl_condition.size() - 4) + ")\n";
+        final_str += ident_str("{", ident_level) + "\n";
+        ident_level += 4;
+    }
+
+    if (inner_conditions.size() > 1)
+    {
+        for (int i = 0; i < inner_conditions.size(); i++)
+        {
+            string else_str = "";
+            if (i > 0)
+            {
+                else_str = "else ";
+            }
+            final_str += ident_str(else_str, ident_level) + "if(" + inner_conditions[i] + ")\n";
+            final_str += ident_str("{", ident_level) + "\n";
+            final_str += ident_str("get();", ident_level + 4) + "\n";
+            final_str += ident_str(inner_bodies[i], ident_level - 4);
+            final_str += ident_str("}", ident_level) + "\n";
+        }
+    }
+    else
+    {
+        final_str += inner_bodies[0];
+    }
+
+    if (whl_condition.size() > 0)
+    {
+        final_str += ident_str("}", ident_level - 4) + "\n";
+    }
+
+    if (write)
+    {
+        cpp_file << final_str;
+    }
+
+    return final_str;
+}
+
 void Parser::write_parser()
 {
 
     ifstream frame_file("parser.frame");
     ofstream header(new_compiler_name + "/parser.h");
     ofstream cpp_file(new_compiler_name + "/parser.cpp");
-    streampos f_header_pos, f_impl_pos;
+    streampos f_header_pos;
 
     string line;
 
@@ -757,133 +993,78 @@ void Parser::write_parser()
         cpp_file << line << endl;
         getline(frame_file, line);
     }
-    f_impl_pos = frame_file.tellg();
 
-    // // Declaration
-    // header << ident_str(prod_name + "(" + args + ");", 4) << endl;
+    // Generate production code
+    for (auto &prod : productions)
+    {
 
-    // // Implementation
-    // cpp_file << "void Parser::" + prod_name + "(" + args + ")" << endl << "{" << endl;
+        // Declaration
+        header << ident_str("void ", 4) + prod.name() + "(" + prod.attr() + ");" << endl;
 
-    // while (scanner.look_ahead().name() != ".")
-    // {
-    //     get();
+        // Implementation
+        cpp_file << "void Parser::" + prod.name() + "(" + prod.attr() + ")" << endl << "{" << endl;
 
-    //     if (current_token.name() == "semAction")
-    //     {
-    //         cpp_file << ident_str(current_token.value().substr(2, current_token.value().size() - 4), 4) << endl;
-    //     }
-    //     else if (current_token.name() == "ident")
-    //     {
-    //         if (token_regex_map.find(current_token.value()) != token_regex_map.end())
-    //         {
-    //             cpp_file << ident_str("expect(", 4) + current_token.value() + ");" << endl;
-    //         }
-    //         else
-    //         {
-    //             string ident_args = "";
-    //             if (scanner.look_ahead().name() == "attr")
-    //             {
-    //                 auto attr_val = scanner.look_ahead().value();
-    //                 ident_args = attr_val.substr(1, attr_val.size() - 2);
-    //                 get();
-    //             }
-    //             cpp_file << ident_str(last_token().value(), 4) + "(" + ident_args + ");" << endl;
-    //         }
-    //     }
-    //     else if (current_token.name() == "{")
-    //     {
-    //         string whl_condition = "";
-    //         vector<string> cond_bodies = vector<string>{""};
-    //         int cond_idx = 0;
-    //         while (current_token.name() != "\x3")
-    //         {
-    //             get();
-    //             if (current_token.name() == "string" || current_token.name() == "char")
-    //             {
-    //                 whl_condition += "scanner.look_ahead().name() == \"" +
-    //                                  current_token.value().substr(1, current_token.value().size() - 2) + "\"";
-    //             }
-    //             else if (current_token.name() == "ident")
-    //             {
-    //                 cond_bodies[cond_idx] = cond_bodies[cond_idx] + current_token.value() + "();\n";
-    //             }
-    //             else if (current_token.name() == "attr")
-    //             {
-    //                 auto prev_str = cond_bodies[cond_idx];
-    //                 string attr_val = current_token.value().substr(1, current_token.value().size() - 2);
-    //                 cond_bodies[cond_idx] = prev_str.insert(prev_str.size() - 3, attr_val);
-    //             }
-    //             else if (current_token.name() == "semAction")
-    //             {
-    //                 string sem_act_val = current_token.value().substr(2, current_token.value().size() - 4);
-    //                 cond_bodies[cond_idx] = cond_bodies[cond_idx] + sem_act_val + "\n";
-    //             }
-    //             else if (current_token.name() == "\x2")
-    //             {
-    //                 whl_condition += " || ";
-    //                 cond_bodies.push_back("");
-    //                 cond_idx++;
-    //             }
-    //         }
-    //         cpp_file << ident_str("while(" + whl_condition + ")", 4) << endl << ident_str("{", 4) << endl;
-    //         if (cond_idx == 0)
-    //         {
-    //             cpp_file << ident_str(cond_bodies[0], 8);
-    //         }
-    //         else
-    //         {
-    //             for (auto &body_str : cond_bodies)
-    //             {
-    //                 auto pos = whl_condition.find("||");
-    //                 auto if_cond = whl_condition.substr(0, pos);
-    //                 whl_condition.erase(0, pos + 3);
-    //                 cpp_file << ident_str("if (" + if_cond + ")", 8) << endl << ident_str("{", 8) << endl;
-    //                 cpp_file << ident_str("get();", 12) << endl;
-    //                 cpp_file << ident_str(body_str, 12);
-    //                 cpp_file << ident_str("}", 8) << endl;
-    //             }
-    //         }
-    //         cpp_file << ident_str("}", 4) << endl;
-    //     }
-    //     else if (current_token.name() == "[")
-    //     {
-    //         expect("string"); // TODO Expect string or char
-    //         cpp_file << ident_str("if (scanner.look_ahead().name() == ", 4) + current_token.value() + ")" << endl
-    //                  << ident_str("{", 4) << endl;
-    //         cpp_file << ident_str("get();", 8) << endl;
-    //         while (current_token.name() != "\x4")
-    //         {
-    //             get();
-    //             if (current_token.name() == "ident")
-    //             {
-    //                 string ident_args = "";
-    //                 if (scanner.look_ahead().name() == "attr")
-    //                 {
-    //                     auto attr_val = scanner.look_ahead().value();
-    //                     ident_args = attr_val.substr(1, attr_val.size() - 2);
-    //                     get();
-    //                 }
-    //                 cpp_file << ident_str(last_token().value(), 8) + "(" + ident_args + ");" << endl;
-    //             }
-    //             else if (current_token.name() == "semAction")
-    //             {
-    //                 cpp_file << ident_str(current_token.value().substr(2, current_token.value().size() - 4), 8) <<
-    //                 endl;
-    //             }
-    //         }
-    //         cpp_file << ident_str("}", 4) << endl;
-    //     }
-    //     else if (current_token.name() == "\x5")
-    //     {
-    //     }
-    //     else if (current_token.name() == "=")
-    //     {
-    //         // TODO Handle error (Production was probably not closed)
-    //     }
-    // }
+        vector<Token<string>>::iterator body_ptr = prod.body().begin();
+        while (body_ptr != prod.body().end())
+        {
+            Token<string> token = *body_ptr;
+            auto idx = body_ptr - prod.body().begin();
 
-    // cpp_file << "}" << endl << endl;
+            write_sem_action(idx, prod, 4, cpp_file);
+
+            if (is_non_terminal(token))
+            {
+                write_ident_call(token, idx, prod, 4, cpp_file);
+            }
+            else if (token.name() == "\x7" || token.name() == "\x5")
+            {
+                write_kleene_par_call(token, prod, body_ptr, 4, cpp_file);
+            }
+            else if (token.name() == "\x8")
+            {
+                write_if_call(token, prod, body_ptr, 4, cpp_file);
+            }
+            else
+            {
+                write_expect_call(token, 4, cpp_file);
+            }
+            body_ptr++;
+        }
+
+        write_sem_action(prod.body().size(), prod, 4, cpp_file);
+
+        cpp_file << "}" << endl << endl;
+    }
+
+    // Finish copying implementation
+    getline(frame_file, line);
+    while (line != "-->first_prod")
+    {
+        cpp_file << line << endl;
+        getline(frame_file, line);
+    }
+
+    cpp_file << ident_str(productions[0].name(), 4) + "(" + productions[0].attr() + ");" << endl;
+
+    getline(frame_file, line);
+    while (line != "-->end")
+    {
+        cpp_file << line << endl;
+        getline(frame_file, line);
+    }
+
+    // Finish copying declaration
+    frame_file.seekg(f_header_pos);
+    getline(frame_file, line);
+    while (line != "-->implementation")
+    {
+        header << line << endl;
+        getline(frame_file, line);
+    }
+
+    frame_file.close();
+    cpp_file.close();
+    header.close();
 }
 
 void Parser::syn_error()
