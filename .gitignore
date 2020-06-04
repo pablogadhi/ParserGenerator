@@ -45,6 +45,7 @@ build/
 Coco/
 Aritmetica/
 Double/
+MyCOCOR/
 
 # COCOL files, except for the main one
 *.ATG

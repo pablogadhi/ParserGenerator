@@ -37,4 +37,6 @@ IGNORE cr + lf + tab + space
 
 PRODUCTIONS
 
+Dummy = ident.
+
 END Coco.

@@ -248,8 +248,9 @@ DFA SCoreGenerator::generate_dfa_finder(unordered_map<string, pair<vector<Token<
             auto end = State(state_name + 1);
             state_name += 2;
             end.set_as_accepting(true);
-            end.set_reference_name(string(1, op));
-            start.add_t_function(make_pair((int)op, make_shared<State>(end)));
+            auto real_val = op_and_special_values[op];
+            end.set_reference_name(string(1, real_val));
+            start.add_t_function(make_pair((int)real_val, make_shared<State>(end)));
             first_state->add_t_function(make_pair(1, make_shared<State>(start)));
         }
 

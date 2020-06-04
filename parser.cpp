@@ -249,7 +249,7 @@ void Parser::set_decl()
             {
                 ANY = union_between_sets(ANY, set);
             }
-            ANY = diff_between_sets(ANY, generator.operators());
+            new_table.add_char_set("ANY", ANY);
             char_set = union_between_sets(ANY, char_set);
         }
         else // The current token is an ident
@@ -386,7 +386,7 @@ void Parser::token_decl()
             {
                 ANY = union_between_sets(ANY, set);
             }
-            ANY = diff_between_sets(ANY, generator.operators());
+            new_table.add_char_set("ANY", ANY);
             regex.push_back(Token<Set<char>>("ANY", ANY));
         }
         else if (current_token.name() == "EXCEPT")
@@ -750,7 +750,13 @@ string Parser::write_sem_action(int idx, Production &prod, int ident_level, ofst
     auto sem_actions = prod.sem_actions();
     if (sem_actions.find(idx) != sem_actions.end())
     {
-        string final_str = ident_str(sem_actions[idx], ident_level) + "\n";
+        auto sem_act = sem_actions[idx];
+        if (sem_act.find("\n") != string::npos && sem_act[sem_act.size() - 1] != '\n')
+        {
+            sem_act.push_back('\n');
+        }
+        string final_str = ident_str(sem_act, ident_level) + "\n";
+        // final_str.erase(remove(final_str.begin(), final_str.end(), '\r'), final_str.end());
         if (write)
         {
             cpp_file << final_str;

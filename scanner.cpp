@@ -68,33 +68,40 @@ Scanner::Scanner(string file_name)
                          Set<char>{'\t', ' ', '!', '\"', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/',
                                    '0',  '1', '2', '3',  '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
                                    '@',  'A', 'B', 'C',  'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-                                   'P',  'Q', 'R', 'S',  'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '^', '_', '`', 'a',
-                                   'b',  'c', 'd', 'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-                                   'r',  's', 't', 'u',  'v', 'w', 'x', 'y', 'z', '{', '~'});
+                                   'P',  'Q', 'R', 'S',  'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', ']', '^', '_', '`',
+                                   'a',  'b', 'c', 'd',  'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                                   'q',  'r', 's', 't',  'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~'});
     s_table.add_char_set("stringCh",
                          Set<char>{'\t', ' ', '!', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
                                    '0',  '1', '2', '3', '4', '5', '6', '7',  '8', '9', ':', ';', '<', '=', '>', '?',
                                    '@',  'A', 'B', 'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-                                   'P',  'Q', 'R', 'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', '^', '_', '`', 'a',
-                                   'b',  'c', 'd', 'e', 'f', 'g', 'h', 'i',  'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-                                   'r',  's', 't', 'u', 'v', 'w', 'x', 'y',  'z', '{', '~'});
+                                   'P',  'Q', 'R', 'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', ']', '^', '_', '`',
+                                   'a',  'b', 'c', 'd', 'e', 'f', 'g', 'h',  'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                                   'q',  'r', 's', 't', 'u', 'v', 'w', 'x',  'y', 'z', '{', '|', '}', '~'});
+    s_table.add_char_set("ANY", Set<char>{'\t', '\n', '\r', ' ', '!', '\"', '#', '$',  '%', '&', '\'', '(', ')', '*',
+                                          '+',  ',',  '-',  '.', '/', '0',  '1', '2',  '3', '4', '5',  '6', '7', '8',
+                                          '9',  ':',  ';',  '<', '=', '>',  '?', '@',  'A', 'B', 'C',  'D', 'E', 'F',
+                                          'G',  'H',  'I',  'J', 'K', 'L',  'M', 'N',  'O', 'P', 'Q',  'R', 'S', 'T',
+                                          'U',  'V',  'W',  'X', 'Y', 'Z',  '[', '\\', ']', '^', '_',  '`', 'a', 'b',
+                                          'c',  'd',  'e',  'f', 'g', 'h',  'i', 'j',  'k', 'l', 'm',  'n', 'o', 'p',
+                                          'q',  'r',  's',  't', 'u', 'v',  'w', 'x',  'y', 'z', '{',  '|', '}', '~'});
     s_table.add_char_set("hex",
                          Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'});
     s_table.add_char_set("printable",
                          Set<char>{' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',',  '-', '.', '/',
                                    '0', '1', '2',  '3', '4', '5', '6', '7',  '8', '9', ':', ';', '<',  '=', '>', '?',
                                    '@', 'A', 'B',  'C', 'D', 'E', 'F', 'G',  'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O',
-                                   'P', 'Q', 'R',  'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', '\\', '^', '_', '`',
-                                   'a', 'b', 'c',  'd', 'e', 'f', 'g', 'h',  'i', 'j', 'k', 'l', 'm',  'n', 'o', 'p',
-                                   'q', 'r', 's',  't', 'u', 'v', 'w', 'x',  'y', 'z', '{', '~'});
+                                   'P', 'Q', 'R',  'S', 'T', 'U', 'V', 'W',  'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+                                   '`', 'a', 'b',  'c', 'd', 'e', 'f', 'g',  'h', 'i', 'j', 'k', 'l',  'm', 'n', 'o',
+                                   'p', 'q', 'r',  's', 't', 'u', 'v', 'w',  'x', 'y', 'z', '{', '|',  '}', '~'});
     s_table.add_char_set("space", Set<char>{' '});
-    s_table.add_char_set("attrCh",
-                         Set<char>{'\t', '\n', '\r', ' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*',  '+', ',',
-                                   '-',  '.',  '/',  '0', '1', '2',  '3', '4', '5', '6', '7',  '8', '9', ':',  ';', '=',
-                                   '?',  '@',  'A',  'B', 'C', 'D',  'E', 'F', 'G', 'H', 'I',  'J', 'K', 'L',  'M', 'N',
-                                   'O',  'P',  'Q',  'R', 'S', 'T',  'U', 'V', 'W', 'X', 'Y',  'Z', '[', '\\', '^', '_',
-                                   '`',  'a',  'b',  'c', 'd', 'e',  'f', 'g', 'h', 'i', 'j',  'k', 'l', 'm',  'n', 'o',
-                                   'p',  'q',  'r',  's', 't', 'u',  'v', 'w', 'x', 'y', 'z',  '{', '~'});
+    s_table.add_char_set("attrCh", Set<char>{'\t', '\n', '\r', ' ', '!', '\"', '#', '$', '%', '&', '\'', '(', ')', '*',
+                                             '+',  ',',  '-',  '.', '/', '0',  '1', '2', '3', '4', '5',  '6', '7', '8',
+                                             '9',  ':',  ';',  '=', '?', '@',  'A', 'B', 'C', 'D', 'E',  'F', 'G', 'H',
+                                             'I',  'J',  'K',  'L', 'M', 'N',  'O', 'P', 'Q', 'R', 'S',  'T', 'U', 'V',
+                                             'W',  'X',  'Y',  'Z', '[', '\\', ']', '^', '_', '`', 'a',  'b', 'c', 'd',
+                                             'e',  'f',  'g',  'h', 'i', 'j',  'k', 'l', 'm', 'n', 'o',  'p', 'q', 'r',
+                                             's',  't',  'u',  'v', 'w', 'x',  'y', 'z', '{', '|', '}',  '~'});
     s_table.add_char_set("tab", Set<char>{'\t'});
     s_table.add_char_set("lf", Set<char>{'\n'});
     s_table.add_char_set("digit", Set<char>{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'});
@@ -176,9 +183,9 @@ Scanner::Scanner(string file_name)
     state_ptrs[32] = make_shared<State>(state_32);
     auto state_13 = State(13, 1, 0, "\x8");
     state_ptrs[13] = make_shared<State>(state_13);
-    auto state_14 = State(14, 1, 0, "\x7");
+    auto state_14 = State(14, 1, 0, "\x4");
     state_ptrs[14] = make_shared<State>(state_14);
-    auto state_15 = State(15, 1, 0, "\x4");
+    auto state_15 = State(15, 1, 0, "\x7");
     state_ptrs[15] = make_shared<State>(state_15);
     auto state_16 = State(16, 1, 0, "\x2");
     state_ptrs[16] = make_shared<State>(state_16);
@@ -230,6 +237,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[0]->add_t_function(make_pair(89, state_ptrs[11]));
     state_ptrs[0]->add_t_function(make_pair(90, state_ptrs[11]));
     state_ptrs[0]->add_t_function(make_pair(91, state_ptrs[13]));
+    state_ptrs[0]->add_t_function(make_pair(93, state_ptrs[14]));
     state_ptrs[0]->add_t_function(make_pair(95, state_ptrs[11]));
     state_ptrs[0]->add_t_function(make_pair(97, state_ptrs[11]));
     state_ptrs[0]->add_t_function(make_pair(98, state_ptrs[11]));
@@ -257,8 +265,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[0]->add_t_function(make_pair(120, state_ptrs[11]));
     state_ptrs[0]->add_t_function(make_pair(121, state_ptrs[11]));
     state_ptrs[0]->add_t_function(make_pair(122, state_ptrs[11]));
-    state_ptrs[0]->add_t_function(make_pair(123, state_ptrs[14]));
-    state_ptrs[0]->add_t_function(make_pair(93, state_ptrs[15]));
+    state_ptrs[0]->add_t_function(make_pair(123, state_ptrs[15]));
     state_ptrs[0]->add_t_function(make_pair(124, state_ptrs[16]));
     state_ptrs[0]->add_t_function(make_pair(125, state_ptrs[17]));
     state_ptrs[1]->add_t_function(make_pair(46, state_ptrs[18]));
@@ -326,6 +333,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[18]->add_t_function(make_pair(90, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(91, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(92, state_ptrs[18]));
+    state_ptrs[18]->add_t_function(make_pair(93, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(94, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(95, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(96, state_ptrs[18]));
@@ -356,6 +364,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[18]->add_t_function(make_pair(121, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(122, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(123, state_ptrs[18]));
+    state_ptrs[18]->add_t_function(make_pair(124, state_ptrs[18]));
+    state_ptrs[18]->add_t_function(make_pair(125, state_ptrs[18]));
     state_ptrs[18]->add_t_function(make_pair(126, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(40, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(46, state_ptrs[26]));
@@ -421,6 +431,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[26]->add_t_function(make_pair(90, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(91, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(92, state_ptrs[18]));
+    state_ptrs[26]->add_t_function(make_pair(93, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(94, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(95, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(96, state_ptrs[18]));
@@ -451,6 +462,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[26]->add_t_function(make_pair(121, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(122, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(123, state_ptrs[18]));
+    state_ptrs[26]->add_t_function(make_pair(124, state_ptrs[18]));
+    state_ptrs[26]->add_t_function(make_pair(125, state_ptrs[18]));
     state_ptrs[26]->add_t_function(make_pair(126, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(40, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(46, state_ptrs[26]));
@@ -516,6 +529,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[30]->add_t_function(make_pair(90, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(91, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(92, state_ptrs[18]));
+    state_ptrs[30]->add_t_function(make_pair(93, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(94, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(95, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(96, state_ptrs[18]));
@@ -546,6 +560,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[30]->add_t_function(make_pair(121, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(122, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(123, state_ptrs[18]));
+    state_ptrs[30]->add_t_function(make_pair(124, state_ptrs[18]));
+    state_ptrs[30]->add_t_function(make_pair(125, state_ptrs[18]));
     state_ptrs[30]->add_t_function(make_pair(126, state_ptrs[18]));
     state_ptrs[2]->add_t_function(make_pair(46, state_ptrs[19]));
     state_ptrs[3]->add_t_function(make_pair(40, state_ptrs[3]));
@@ -610,6 +626,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[3]->add_t_function(make_pair(90, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(91, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(92, state_ptrs[21]));
+    state_ptrs[3]->add_t_function(make_pair(93, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(94, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(95, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(96, state_ptrs[3]));
@@ -640,6 +657,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[3]->add_t_function(make_pair(121, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(122, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(123, state_ptrs[3]));
+    state_ptrs[3]->add_t_function(make_pair(124, state_ptrs[3]));
+    state_ptrs[3]->add_t_function(make_pair(125, state_ptrs[3]));
     state_ptrs[3]->add_t_function(make_pair(126, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(40, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(46, state_ptrs[3]));
@@ -702,6 +721,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[21]->add_t_function(make_pair(90, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(91, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(92, state_ptrs[3]));
+    state_ptrs[21]->add_t_function(make_pair(93, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(94, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(95, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(96, state_ptrs[3]));
@@ -732,6 +752,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[21]->add_t_function(make_pair(121, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(122, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(123, state_ptrs[3]));
+    state_ptrs[21]->add_t_function(make_pair(124, state_ptrs[3]));
+    state_ptrs[21]->add_t_function(make_pair(125, state_ptrs[3]));
     state_ptrs[21]->add_t_function(make_pair(126, state_ptrs[3]));
     state_ptrs[4]->add_t_function(make_pair(40, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(46, state_ptrs[22]));
@@ -794,6 +816,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[4]->add_t_function(make_pair(90, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(91, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(92, state_ptrs[23]));
+    state_ptrs[4]->add_t_function(make_pair(93, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(94, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(95, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(96, state_ptrs[22]));
@@ -824,6 +847,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[4]->add_t_function(make_pair(121, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(122, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(123, state_ptrs[22]));
+    state_ptrs[4]->add_t_function(make_pair(124, state_ptrs[22]));
+    state_ptrs[4]->add_t_function(make_pair(125, state_ptrs[22]));
     state_ptrs[4]->add_t_function(make_pair(126, state_ptrs[22]));
     state_ptrs[22]->add_t_function(make_pair(39, state_ptrs[27]));
     state_ptrs[23]->add_t_function(make_pair(40, state_ptrs[28]));
@@ -887,6 +912,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[23]->add_t_function(make_pair(90, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(91, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(92, state_ptrs[28]));
+    state_ptrs[23]->add_t_function(make_pair(93, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(94, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(95, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(96, state_ptrs[28]));
@@ -917,6 +943,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[23]->add_t_function(make_pair(121, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(122, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(123, state_ptrs[28]));
+    state_ptrs[23]->add_t_function(make_pair(124, state_ptrs[28]));
+    state_ptrs[23]->add_t_function(make_pair(125, state_ptrs[28]));
     state_ptrs[23]->add_t_function(make_pair(126, state_ptrs[28]));
     state_ptrs[28]->add_t_function(make_pair(39, state_ptrs[27]));
     state_ptrs[28]->add_t_function(make_pair(48, state_ptrs[28]));
@@ -1008,6 +1036,7 @@ Scanner::Scanner(string file_name)
     state_ptrs[9]->add_t_function(make_pair(90, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(91, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(92, state_ptrs[9]));
+    state_ptrs[9]->add_t_function(make_pair(93, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(94, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(95, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(96, state_ptrs[9]));
@@ -1038,6 +1067,8 @@ Scanner::Scanner(string file_name)
     state_ptrs[9]->add_t_function(make_pair(121, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(122, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(123, state_ptrs[9]));
+    state_ptrs[9]->add_t_function(make_pair(124, state_ptrs[9]));
+    state_ptrs[9]->add_t_function(make_pair(125, state_ptrs[9]));
     state_ptrs[9]->add_t_function(make_pair(126, state_ptrs[9]));
     state_ptrs[11]->add_t_function(make_pair(48, state_ptrs[11]));
     state_ptrs[11]->add_t_function(make_pair(49, state_ptrs[11]));
