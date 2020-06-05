@@ -43,19 +43,23 @@ class Parser
     unordered_map<string, Set<string>> first_pos;
     unordered_map<string, Set<string>> follow_pos;
     vector<Error> syntactic_errors;
+    vector<Token<string>> error_fixes;
+    vector<Token<string>> watched_tokens;
 
   public:
     Parser(Scanner &);
     ~Parser();
     void parse();
     void get();
+    Token<string> look_ahead();
     Token<string> last_token();
     void expect(string);
     bool soft_expect(string);
     string compiler_name();
     bool is_non_terminal(Token<string>);
 -->prod_declarations
-    void syn_error();
+    void syn_error(string, string message = "");
+    void fix_syn_error(string);
 };
 
 #endif
@@ -153,15 +157,42 @@ Parser::~Parser()
 
 void Parser::get()
 {
-    auto token_to_be = scanner.scan();
-    if (token_to_be.name() != "<ERROR>")
+    if (!error_fixes.empty())
     {
-        current_token = token_to_be;
+        current_token = error_fixes.back();
+        error_fixes.pop_back();
+        token_list.push_back(current_token);
+    }
+    else if (!watched_tokens.empty())
+    {
+        current_token = watched_tokens.back();
+        watched_tokens.pop_back();
         token_list.push_back(current_token);
     }
     else
     {
-        get();
+        auto token_to_be = scanner.scan();
+        if (token_to_be.name() != "<ERROR>")
+        {
+            current_token = token_to_be;
+            token_list.push_back(current_token);
+        }
+        else
+        {
+            get();
+        }
+    }
+}
+
+Token<string> Parser::look_ahead()
+{
+    if (watched_tokens.empty())
+    {
+        return scanner.look_ahead();
+    }
+    else
+    {
+        return watched_tokens.back();
     }
 }
 
@@ -187,7 +218,7 @@ void Parser::expect(string str)
         }
         else
         {
-            // TODO Add Syntatic Error to error list
+            syn_error(str);
         }
     }
 }
@@ -215,12 +246,42 @@ void Parser::parse()
 -->first_prod
 }
 
-void Parser::syn_error()
+void Parser::syn_error(string token_name, string message)
 {
     auto prev_token = last_token();
-    auto error =
-        Error("Syntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")", SYNTACTIC_ERROR);
-    cout << error.value() << endl;
-    cout << "Expected token: (\".\", \'.\')" << endl;
+    string error_str = "\nSyntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")\n";
+    if (message == "")
+    {
+        error_str += "Expected token: " + token_name + "\n" + "Found token with name: " + current_token.name() +
+                     ", and value: " + current_token.value() + "\n\n";
+    }
+    else
+    {
+        error_str += message + "\n\n";
+    }
+    cout << error_str;
+    auto error = Error(error_str, SYNTACTIC_ERROR);
+    syntactic_errors.push_back(error);
+    fix_syn_error(token_name);
+}
+
+void Parser::fix_syn_error(string token_name)
+{
+    if (look_ahead().name() != token_name)
+    {
+        unordered_map<string, string>::iterator keyword_itr;
+        if (token_name.size() == 1)
+        {
+            error_fixes.push_back(Token<string>(token_name, token_name));
+            watched_tokens.push_back(current_token);
+            token_list.pop_back();
+        }
+        else if ((keyword_itr = scanner.symbols().keywords().find(token_name)) != scanner.symbols().keywords().end())
+        {
+            error_fixes.push_back(Token<string>((*keyword_itr).second, (*keyword_itr).second));
+            watched_tokens.push_back(current_token);
+            token_list.pop_back();
+        }
+    }
 }
 -->end

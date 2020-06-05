@@ -40,12 +40,15 @@ class Parser
     unordered_map<string, Set<string>> first_pos;
     unordered_map<string, Set<string>> follow_pos;
     vector<Error> syntactic_errors;
+    vector<Token<string>> error_fixes;
+    vector<Token<string>> watched_tokens;
 
   public:
     Parser(Scanner &);
     ~Parser();
     void parse();
     void get();
+    Token<string> look_ahead();
     Token<string> last_token();
     void expect(string);
     bool soft_expect(string);
@@ -68,7 +71,8 @@ class Parser
     string write_expect_call(Token<string>, int, ofstream &, bool write = true);
     string write_sem_action(int, Production &, int, ofstream &, bool write = true);
     void write_parser();
-    void syn_error();
+    void syn_error(string, string message = "");
+    void fix_syn_error(string);
 };
 
 #endif

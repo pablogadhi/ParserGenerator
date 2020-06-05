@@ -360,7 +360,8 @@ vector<Error> Scanner::errors()
 void Scanner::lex_error()
 {
     auto error = Error(line, column, "Unexpected char: " + char_to_str(*forward, true));
-    cout << "LEXICAL ERROR found in line " << error.line() << " and column " << error.column() << ": " << error.value()
+    cout << "\nLEXICAL ERROR found in line " << error.line() << " and column " << error.column() << ": "
+         << error.value() << endl
          << endl;
     error_list.push_back(error);
 }

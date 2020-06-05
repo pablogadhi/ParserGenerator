@@ -85,15 +85,42 @@ Parser::~Parser()
 
 void Parser::get()
 {
-    auto token_to_be = scanner.scan();
-    if (token_to_be.name() != "<ERROR>")
+    if (!error_fixes.empty())
     {
-        current_token = token_to_be;
+        current_token = error_fixes.back();
+        error_fixes.pop_back();
+        token_list.push_back(current_token);
+    }
+    else if (!watched_tokens.empty())
+    {
+        current_token = watched_tokens.back();
+        watched_tokens.pop_back();
         token_list.push_back(current_token);
     }
     else
     {
-        get();
+        auto token_to_be = scanner.scan();
+        if (token_to_be.name() != "<ERROR>")
+        {
+            current_token = token_to_be;
+            token_list.push_back(current_token);
+        }
+        else
+        {
+            get();
+        }
+    }
+}
+
+Token<string> Parser::look_ahead()
+{
+    if (watched_tokens.empty())
+    {
+        return scanner.look_ahead();
+    }
+    else
+    {
+        return watched_tokens.back();
     }
 }
 
@@ -119,7 +146,7 @@ void Parser::expect(string str)
         }
         else
         {
-            // TODO Add Syntatic Error to error list
+            syn_error(str);
         }
     }
 }
@@ -151,21 +178,21 @@ void Parser::parse()
 
     // Character Sets
     expect("CHARACTERS");
-    while (scanner.look_ahead().name() == "ident")
+    while (look_ahead().name() == "ident")
     {
         set_decl();
     }
 
     // Keywords
     expect("KEYWORDS");
-    while (scanner.look_ahead().name() == "ident")
+    while (look_ahead().name() == "ident")
     {
         keyword_decl();
     }
 
     // Tokens
     expect("TOKENS");
-    while (scanner.look_ahead().name() == "ident")
+    while (look_ahead().name() == "ident")
     {
         token_decl();
     }
@@ -178,8 +205,8 @@ void Parser::parse()
 
     // Productions
     expect("PRODUCTIONS");
-    start_s_name = scanner.look_ahead().value();
-    while (scanner.look_ahead().name() == "ident")
+    start_s_name = look_ahead().value();
+    while (look_ahead().name() == "ident")
     {
         prod_decl();
     }
@@ -198,7 +225,7 @@ void Parser::set_decl()
     function<void(char)> single_op_func = [&](char c) { char_set.add(c); };
     function<void(Set<char>)> set_op_func = [&](Set<char> set) { char_set = union_between_sets(char_set, set); };
     expect("=");
-    while (scanner.look_ahead().name() != ".")
+    while (look_ahead().name() != ".")
     {
         get();
         if (current_token.name() == "string")
@@ -262,8 +289,7 @@ void Parser::set_decl()
             }
             else
             {
-                // TODO Add Error: Set Not Found
-                syn_error();
+                syn_error("ident", "Set " + current_token.value() + " was not defined!");
                 break;
             }
         }
@@ -291,10 +317,7 @@ void Parser::keyword_decl()
         token_regex_map[keyword_name] = make_pair(keyword_regex, false);
     }
 
-    if (!soft_expect("."))
-    {
-        syn_error();
-    }
+    expect(".");
 }
 
 void Parser::ignore_decl()
@@ -306,8 +329,14 @@ void Parser::ignore_decl()
     {
         if (current_token.name() == "ident")
         {
-            // TODO Handle unknown sets
-            current_op(new_table.char_sets()[current_token.value()]);
+            if (new_table.char_sets().find(current_token.value()) != new_table.char_sets().end())
+            {
+                current_op(new_table.char_sets()[current_token.value()]);
+            }
+            else
+            {
+                syn_error("ident", "Set " + current_token.value() + " was not defined!");
+            }
         }
         else if (current_token.name() == "+")
         {
@@ -333,7 +362,7 @@ void Parser::token_decl()
     vector<Token<Set<char>>> regex;
     bool is_non_recursive = false;
     expect("=");
-    while (scanner.look_ahead().name() != ".")
+    while (look_ahead().name() != ".")
     {
         get();
         if (current_token.name() == "ident")
@@ -355,7 +384,7 @@ void Parser::token_decl()
             }
             else
             {
-                syn_error();
+                syn_error("ident", "Set or Token " + current_token.value() + " was not defined!");
                 break;
             }
         }
@@ -391,7 +420,7 @@ void Parser::token_decl()
         }
         else if (current_token.name() == "EXCEPT")
         {
-            while (scanner.look_ahead().name() != ".")
+            while (look_ahead().name() != ".")
             {
                 get();
             }
@@ -427,7 +456,7 @@ void Parser::prod_decl()
 
     expect("=");
 
-    while (scanner.look_ahead().name() != ".")
+    while (look_ahead().name() != ".")
     {
         get();
         if (current_token.name() == "char")
@@ -440,13 +469,30 @@ void Parser::prod_decl()
         }
         else if (current_token.name() == "string")
         {
-            vector<Token<Set<char>>> regex;
             auto t_val_str = current_token.value().substr(1, current_token.value().size() - 2);
+
+            // See if the value could be a keyword
+            auto finder = scanner.get_finder();
             for (auto &c : t_val_str)
             {
-                regex.push_back(Token<Set<char>>(t_val_str, Set<char>{c}));
+                finder.move(c);
             }
-            token_regex_map[t_val_str] = make_pair(regex, false);
+
+            if (finder.current().reference_name() == "ident")
+            {
+                new_table.add_keyword(t_val_str, t_val_str);
+            }
+            else
+            {
+                vector<Token<Set<char>>> regex;
+                for (auto &c : t_val_str)
+                {
+                    regex.push_back(Token<Set<char>>(t_val_str, Set<char>{c}));
+                }
+                token_regex_map[t_val_str] = make_pair(regex, false);
+            }
+            finder.reset_movements();
+
             prod_body.push_back(Token<string>(current_token.name(), t_val_str));
             token_idx++;
         }
@@ -781,7 +827,7 @@ string Parser::write_if_call(Token<string> token, Production &prod, vector<Token
     {
         if (fi_item != "")
         {
-            cond_str += "scanner.look_ahead().name() == \"" + fi_item + "\" || ";
+            cond_str += "look_ahead().name() == \"" + fi_item + "\" || ";
         }
         else
         {
@@ -846,10 +892,10 @@ string Parser::write_kleene_par_call(Token<string> token, Production &prod, vect
         {
             if (fi_item != "")
             {
-                cond_str += "scanner.look_ahead().name() == \"" + fi_item + "\" || ";
+                cond_str += "look_ahead().name() == \"" + fi_item + "\" || ";
                 if (token.name() == "\x7")
                 {
-                    whl_condition += "scanner.look_ahead().name() == \"" + fi_item + "\" || ";
+                    whl_condition += "look_ahead().name() == \"" + fi_item + "\" || ";
                 }
             }
             else
@@ -897,12 +943,7 @@ string Parser::write_kleene_par_call(Token<string> token, Production &prod, vect
             }
             else
             {
-                auto prev_token = prod.body()[inner_t_idx - 1];
-                if (find_token_in_prod(prod, Token<string>("\x2", "|"), inner_t_idx) == -1 &&
-                    prev_token.name() != "\x2")
-                {
-                    inner_body_str += write_expect_call(inner_t, ident_level + 4, cpp_file, false);
-                }
+                inner_body_str += write_expect_call(inner_t, ident_level + 4, cpp_file, false);
             }
 
             inner_body_str += write_sem_action(inner_t_idx + 1, prod, ident_level + 4, cpp_file, false);
@@ -938,7 +979,7 @@ string Parser::write_kleene_par_call(Token<string> token, Production &prod, vect
             }
             final_str += ident_str(else_str, ident_level) + "if(" + inner_conditions[i] + ")\n";
             final_str += ident_str("{", ident_level) + "\n";
-            final_str += ident_str("get();", ident_level + 4) + "\n";
+            // final_str += ident_str("get();", ident_level + 4) + "\n";
             final_str += ident_str(inner_bodies[i], ident_level - 4);
             final_str += ident_str("}", ident_level) + "\n";
         }
@@ -1073,11 +1114,41 @@ void Parser::write_parser()
     header.close();
 }
 
-void Parser::syn_error()
+void Parser::syn_error(string token_name, string message)
 {
     auto prev_token = last_token();
-    auto error =
-        Error("Syntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")", SYNTACTIC_ERROR);
-    cout << error.value() << endl;
-    cout << "Expected token: (\".\", \'.\')" << endl;
+    string error_str = "\nSyntatic error found after (" + prev_token.name() + ", " + prev_token.value() + ")\n";
+    if (message == "")
+    {
+        error_str += "Expected token: " + token_name + "\n" + "Found token with name: " + current_token.name() +
+                     ", and value: " + current_token.value() + "\n\n";
+    }
+    else
+    {
+        error_str += message + "\n\n";
+    }
+    cout << error_str;
+    auto error = Error(error_str, SYNTACTIC_ERROR);
+    syntactic_errors.push_back(error);
+    fix_syn_error(token_name);
+}
+
+void Parser::fix_syn_error(string token_name)
+{
+    if (look_ahead().name() != token_name)
+    {
+        unordered_map<string, string>::iterator keyword_itr;
+        if (token_name.size() == 1)
+        {
+            error_fixes.push_back(Token<string>(token_name, token_name));
+            watched_tokens.push_back(current_token);
+            token_list.pop_back();
+        }
+        else if ((keyword_itr = scanner.symbols().keywords().find(token_name)) != scanner.symbols().keywords().end())
+        {
+            error_fixes.push_back(Token<string>((*keyword_itr).second, (*keyword_itr).second));
+            watched_tokens.push_back(current_token);
+            token_list.pop_back();
+        }
+    }
 }
